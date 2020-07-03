@@ -101,12 +101,12 @@ func (g *Graph) RespondToInput(win *pixelgl.Window) {
 
 	redraw := false
 
-	if win.JustPressed(pixelgl.KeyUp) {
+	if win.Pressed(pixelgl.KeyUp) {
 		switch {
 		case win.Pressed(pixelgl.KeyF):
 			frequency += 0.001
 		case win.Pressed(pixelgl.KeyL):
-			lacunarity += 0.1
+			lacunarity += 0.01
 		case win.Pressed(pixelgl.KeyG):
 			gain += 0.1
 		case win.Pressed(pixelgl.KeyO):
@@ -116,16 +116,18 @@ func (g *Graph) RespondToInput(win *pixelgl.Window) {
 		redraw = true
 	}
 
-	if win.JustPressed(pixelgl.KeyDown) {
+	if win.Pressed(pixelgl.KeyDown) {
 		switch {
 		case win.Pressed(pixelgl.KeyF):
 			frequency -= 0.001
 		case win.Pressed(pixelgl.KeyL):
-			lacunarity -= 0.1
+			lacunarity -= 0.01
 		case win.Pressed(pixelgl.KeyG):
 			gain -= 0.1
 		case win.Pressed(pixelgl.KeyO):
-			octaves--
+			if octaves > 0 {
+				octaves--
+			}
 		}
 
 		redraw = true
