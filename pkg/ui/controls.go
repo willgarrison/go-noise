@@ -6,11 +6,8 @@ import (
 	"github.com/faiface/pixel"
 	"github.com/faiface/pixel/imdraw"
 	"github.com/faiface/pixel/pixelgl"
-	"github.com/faiface/pixel/text"
-	"github.com/golang/freetype/truetype"
 	"github.com/willgarrison/go-noise/pkg/helpers"
 	"github.com/willgarrison/go-noise/pkg/signals"
-	"golang.org/x/image/font/gofont/gomono"
 )
 
 // Controls ...
@@ -19,8 +16,7 @@ type Controls struct {
 	Dials      []*Dial
 	Imd        *imdraw.IMDraw
 	ImdBatch   *imdraw.IMDraw
-	txtBatch   *pixel.Batch
-	txt        *text.Text
+	typ        *Typography
 }
 
 // NewControls ...
@@ -44,15 +40,7 @@ func NewControls(x, y, w, h float64) *Controls {
 	c.Imd = imdraw.New(nil)
 	c.ImdBatch = imdraw.New(nil)
 
-	// Font
-	ttf, err := truetype.Parse(gomono.TTF)
-	if err != nil {
-		panic(err)
-	}
-	fontFace := truetype.NewFace(ttf, &truetype.Options{Size: 10})
-	txtAtlas := text.NewAtlas(fontFace, text.ASCII)
-	c.txtBatch = pixel.NewBatch(&pixel.TrianglesData{}, txtAtlas.Picture())
-	c.txt = text.New(pixel.ZV, txtAtlas)
+	c.typ = NewTypography()
 
 	return c
 }
@@ -60,21 +48,21 @@ func NewControls(x, y, w, h float64) *Controls {
 // Compose ...
 func (c *Controls) Compose() {
 
-	c.txtBatch.Clear()
+	c.typ.txtBatch.Clear()
 
 	for i := range c.Dials {
 
 		// Labels
 		str := c.Dials[i].Label
-		strX := c.Dials[i].center.X - (c.txt.BoundsOf(str).W() / 2)
+		strX := c.Dials[i].center.X - (c.typ.txt.BoundsOf(str).W() / 2)
 		strY := c.Dials[i].y - 20
-		helpers.DrawTextToBatch(str, pixel.V(strX, strY), c.txtBatch, c.txt)
+		helpers.DrawTextToBatch(str, pixel.V(strX, strY), c.typ.txtBatch, c.typ.txt)
 
 		// Values
 		str = fmt.Sprintf("%.3f", c.Dials[i].Value)
-		strX = c.Dials[i].center.X - (c.txt.BoundsOf(str).W() / 2)
+		strX = c.Dials[i].center.X - (c.typ.txt.BoundsOf(str).W() / 2)
 		strY = c.Dials[i].y - 10
-		helpers.DrawTextToBatch(str, pixel.V(strX, strY), c.txtBatch, c.txt)
+		helpers.DrawTextToBatch(str, pixel.V(strX, strY), c.typ.txtBatch, c.typ.txt)
 	}
 }
 
@@ -94,7 +82,7 @@ func (c *Controls) Draw(win *pixelgl.Window) {
 	c.ImdBatch.Draw(win)
 
 	// Draw textBatch
-	c.txtBatch.Draw(win)
+	c.typ.txtBatch.Draw(win)
 }
 
 // RespondToInput ...
