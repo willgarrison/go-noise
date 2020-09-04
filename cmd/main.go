@@ -2,13 +2,18 @@ package main
 
 import (
 	"github.com/faiface/pixel/pixelgl"
+	"github.com/willgarrison/go-noise/pkg/signals"
 	"github.com/willgarrison/go-noise/pkg/ui"
 	"golang.org/x/image/colornames"
 )
 
 const (
-	width  float64 = 800.0
-	height float64 = 600.0
+	windowWidth    float64 = 800.0
+	windowHeight   float64 = 600.0
+	graphWidth     float64 = 600.0
+	graphHeight    float64 = 600.0
+	controlsWidth  float64 = 200.0
+	controlsHeight float64 = 600.0
 )
 
 func main() {
@@ -18,18 +23,25 @@ func main() {
 func run() {
 
 	// Initialize window
-	win := ui.NewWindow(width, height)
+	win := ui.NewWindow(windowWidth, windowHeight)
 
-	g := ui.NewGraph(width, height)
+	c := ui.NewControls(600, 0, controlsWidth, controlsHeight)
+	c.Compose()
 
-	g.Generate()
+	g := ui.NewGraph(graphWidth, graphHeight)
+	g.Compose()
+
+	graphChan := make(chan signals.ControlValue)
+	go g.Listen(graphChan)
 
 	for !win.Closed() {
 
 		win.Clear(colornames.Whitesmoke)
 
-		g.RespondToInput(win)
+		c.RespondToInput(win, graphChan)
+		c.Draw(win)
 
+		g.RespondToInput(win)
 		g.Draw(win)
 
 		win.Update()
