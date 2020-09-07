@@ -32,9 +32,9 @@ func NewControls(x, y, w, h float64) *Controls {
 	c.Dials = make([]*Dial, 4)
 
 	dialSize := 75.0
-	c.Dials[0] = NewDial("frequency", c.X+10, c.Y+40, dialSize, 0.03, 0.01, 3.0, 0.001)
+	c.Dials[0] = NewDial("frequency", c.X+20, c.Y+40, dialSize, 0.03, 0.01, 3.0, 0.001)
 	c.Dials[1] = NewDial("lacunarity", c.X+110, c.Y+40, dialSize, 0.5, 0.01, 3.0, 0.01)
-	c.Dials[2] = NewDial("gain", c.X+10, c.Y+150, dialSize, 2.0, 0.01, 3.0, 0.1)
+	c.Dials[2] = NewDial("gain", c.X+20, c.Y+150, dialSize, 2.0, 0.01, 3.0, 0.1)
 	c.Dials[3] = NewDial("octaves", c.X+110, c.Y+150, dialSize, 5.0, 1.0, 10.0, 1)
 
 	c.Imd = imdraw.New(nil)

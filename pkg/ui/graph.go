@@ -38,8 +38,8 @@ func NewGraph(w, h float64) *Graph {
 	g.W = w
 	g.H = h
 
-	g.XSteps = 320
-	g.YSteps = 640
+	g.XSteps = 300
+	g.YSteps = 300
 
 	g.Imd = imdraw.New(nil)
 
