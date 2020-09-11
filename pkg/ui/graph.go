@@ -12,22 +12,21 @@ import (
 	"github.com/willgarrison/go-noise/pkg/simplexnoise"
 )
 
-var (
-	frequency  float32 = 0.03
-	lacunarity float32 = 0.5
-	gain       float32 = 2.0
-	octaves    float32 = 5.0
-)
-
 // Graph ...
 type Graph struct {
 	W              float64
 	H              float64
-	XSteps         uint32
-	YSteps         uint32
 	Matrix         [][]uint32
 	Imd            *imdraw.IMDraw
-	signalReceived bool
+	ShouldReset    bool
+	SignalReceived bool
+	Frequency      float32
+	Lacunarity     float32
+	Gain           float32
+	Octaves        uint8
+	XSteps         uint32
+	YSteps         uint32
+	Offset         uint32
 }
 
 // NewGraph ...
@@ -38,26 +37,36 @@ func NewGraph(w, h float64) *Graph {
 	g.W = w
 	g.H = h
 
-	g.XSteps = 300
-	g.YSteps = 300
-
 	g.Imd = imdraw.New(nil)
 
+	g.Reset()
+
 	return g
+}
+
+// Reset ...
+func (g *Graph) Reset() {
+	g.Frequency = 0.3
+	g.Lacunarity = 0.5
+	g.Gain = 2.0
+	g.Octaves = 5
+	g.XSteps = 32
+	g.YSteps = 48
+	g.Offset = 500
 }
 
 // Compose ...
 func (g *Graph) Compose() {
 
 	// Reset Matrix
-	g.Matrix = make([][]uint32, g.XSteps)
+	g.Matrix = make([][]uint32, int(g.XSteps))
 	for i := range g.Matrix {
-		g.Matrix[i] = make([]uint32, g.YSteps)
+		g.Matrix[i] = make([]uint32, int(g.YSteps))
 	}
 
 	xPos := uint32(0)
 	for xPos < g.XSteps {
-		val := simplexnoise.Fbm(float32(xPos), 0, frequency, lacunarity, gain, int(octaves))
+		val := simplexnoise.Fbm(float32(xPos+g.Offset), 0, g.Frequency, g.Lacunarity, g.Gain, int(g.Octaves))
 		yPos := uint32(math.Round(helpers.ReRange(float64(val), -1, 1, 0, float64(g.YSteps-1))))
 		g.Matrix[xPos][yPos] = 1
 		xPos++
@@ -66,24 +75,23 @@ func (g *Graph) Compose() {
 	g.Imd.Clear()
 
 	// Background
-	g.Imd.Color = color.RGBA{0xd0, 0xd0, 0xd0, 0xff}
-	g.Imd.Push(
-		pixel.V(0, 0),
-		pixel.V(g.W, g.H),
-	)
-	g.Imd.Rectangle(0)
+	// g.Imd.Color = color.RGBA{0xd0, 0xd0, 0xd0, 0xff}
+	// g.Imd.Push(
+	// 	pixel.V(0, 0),
+	// 	pixel.V(g.W, g.H),
+	// )
+	// g.Imd.Rectangle(0)
 
 	// Draw active blocks
 	g.Imd.Color = color.RGBA{0x00, 0x00, 0x00, 0xff}
-	margin := 0.0
-	blockWidth := g.W/float64(g.XSteps) - margin
-	blockHeight := g.H/float64(g.YSteps) - margin
+	blockWidth := g.W / float64(g.XSteps)
+	blockHeight := g.H / float64(g.YSteps)
 	for x := range g.Matrix {
 		for y := range g.Matrix[x] {
 			if g.Matrix[x][y] == 1 {
 				g.Imd.Color = color.RGBA{0x00, 0x00, 0x00, 0xff}
 				g.Imd.Push(
-					pixel.V((float64(x)*g.W/float64(g.XSteps)+margin), (float64(y)*g.H/float64(g.YSteps)+margin)),
+					pixel.V((float64(x)*g.W/float64(g.XSteps)), (float64(y)*g.H/float64(g.YSteps))),
 					pixel.V((float64(x)*g.W/float64(g.XSteps)+blockWidth), (float64(y)*g.H/float64(g.YSteps)+blockHeight)),
 				)
 				g.Imd.Rectangle(0)
@@ -99,9 +107,8 @@ func (g *Graph) Draw(win *pixelgl.Window) {
 
 // RespondToInput ...
 func (g *Graph) RespondToInput(win *pixelgl.Window) {
-	if g.signalReceived {
-		// fmt.Println("frequency:", frequency, "lacunarity:", lacunarity, "gain:", gain, "octaves:", octaves)
-		g.signalReceived = false
+	if g.SignalReceived {
+		g.SignalReceived = false
 		g.Compose()
 	}
 }
@@ -113,17 +120,25 @@ func (g *Graph) Listen(graphChan chan signals.ControlValue) {
 		case msg := <-graphChan:
 
 			switch msg.Label {
+			case "reset":
+				g.Reset()
 			case "frequency":
-				frequency = float32(msg.Value)
+				g.Frequency = float32(msg.Value)
 			case "lacunarity":
-				lacunarity = float32(msg.Value)
+				g.Lacunarity = float32(msg.Value)
 			case "gain":
-				gain = float32(msg.Value)
+				g.Gain = float32(msg.Value)
 			case "octaves":
-				octaves = float32(msg.Value)
+				g.Octaves = uint8(msg.Value)
+			case "xSteps":
+				g.XSteps = uint32(msg.Value)
+			case "ySteps":
+				g.YSteps = uint32(msg.Value)
+			case "offset":
+				g.Offset = uint32(msg.Value)
 			}
 
-			g.signalReceived = true
+			g.SignalReceived = true
 		}
 	}
 }

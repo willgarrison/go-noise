@@ -8,12 +8,12 @@ import (
 )
 
 const (
-	windowWidth    float64 = 800.0
-	windowHeight   float64 = 600.0
-	graphWidth     float64 = 600.0
-	graphHeight    float64 = 600.0
+	windowWidth    float64 = 1200.0
+	windowHeight   float64 = 900.0
+	graphWidth     float64 = 1000.0
+	graphHeight    float64 = 900.0
 	controlsWidth  float64 = 200.0
-	controlsHeight float64 = 600.0
+	controlsHeight float64 = 900.0
 )
 
 func main() {
@@ -25,7 +25,7 @@ func run() {
 	// Initialize window
 	win := ui.NewWindow(windowWidth, windowHeight)
 
-	c := ui.NewControls(600, 0, controlsWidth, controlsHeight)
+	c := ui.NewControls(1000, 0, controlsWidth, controlsHeight)
 	c.Compose()
 
 	g := ui.NewGraph(graphWidth, graphHeight)

@@ -106,14 +106,9 @@ func (d *Dial) Pressed(pos pixel.Vec) {
 		d.initialMousePosition = pos
 
 		if d.newValue != d.Value {
-
-			d.Value = d.newValue
-
-			// d.Value = helpers.Constrain(d.Value, d.min, d.max)
-			// fmt.Println(d.Value)
-
+			d.Value = helpers.Constrain(d.newValue, d.min, d.max)
+			d.newValue = d.Value
 			d.IsUnread = true
-
 			d.Compose()
 		}
 	}
