@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/faiface/pixel"
+	"github.com/faiface/pixel/imdraw"
 	"github.com/faiface/pixel/pixelgl"
 	"github.com/willgarrison/go-noise/pkg/signals"
 	"github.com/willgarrison/go-noise/pkg/ui"
@@ -12,6 +13,7 @@ var (
 	windowRect   pixel.Rect = pixel.R(0, 0, 1200, 900)
 	controlsRect pixel.Rect = pixel.R(1000, 0, 200, 900)
 	graphRect    pixel.Rect = pixel.R(0, 0, 1000, 900)
+	bpm          float64    = 60
 )
 
 func main() {
@@ -29,18 +31,30 @@ func run() {
 	g := ui.NewGraph(graphRect)
 	g.Compose()
 
-	graphChan := make(chan signals.ControlValue)
-	go g.Listen(graphChan)
+	ctrlChan := make(chan signals.ControlValue)
+	go g.Listen(ctrlChan)
+
+	p := ui.NewPlayhead(graphRect.Min.X, graphRect.Max.Y)
+	p.Compose()
+
+	imdBatch := imdraw.New(nil)
 
 	for !win.Closed() {
 
 		win.Clear(colornames.Whitesmoke)
 
-		c.RespondToInput(win, graphChan)
-		c.Draw(win)
+		imdBatch.Clear()
+
+		c.RespondToInput(win, ctrlChan)
+		c.DrawTo(imdBatch)
+		c.Typ.TxtBatch.Draw(win)
 
 		g.RespondToInput(win)
-		g.Draw(win)
+		g.DrawTo(imdBatch)
+
+		p.DrawTo(imdBatch)
+
+		imdBatch.Draw(win)
 
 		win.Update()
 	}

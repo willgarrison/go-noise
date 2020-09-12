@@ -1,10 +1,7 @@
 package helpers
 
 import (
-	"image/color"
-
 	"github.com/faiface/pixel"
-	"github.com/faiface/pixel/text"
 )
 
 // ReRange maps a value from one range to another
@@ -43,13 +40,4 @@ func PosInBounds(pos pixel.Vec, bounds []pixel.Vec) bool {
 		return true
 	}
 	return false
-}
-
-// DrawTextToBatch ...
-func DrawTextToBatch(s string, vec pixel.Vec, txtBatch *pixel.Batch, txt *text.Text) {
-	txt.Clear()
-	txt.Color = color.RGBA{0x00, 0x00, 0x00, 0xff}
-	txt.Dot = vec
-	txt.WriteString(s)
-	txt.Draw(txtBatch, pixel.IM)
 }

@@ -96,9 +96,9 @@ func (g *Graph) Compose() {
 	}
 }
 
-// Draw ...
-func (g *Graph) Draw(win *pixelgl.Window) {
-	g.Imd.Draw(win)
+// DrawTo ...
+func (g *Graph) DrawTo(imd *imdraw.IMDraw) {
+	g.Imd.Draw(imd)
 }
 
 // RespondToInput ...

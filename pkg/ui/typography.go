@@ -1,6 +1,8 @@
 package ui
 
 import (
+	"image/color"
+
 	"github.com/faiface/pixel"
 	"github.com/faiface/pixel/text"
 	"github.com/golang/freetype/truetype"
@@ -9,8 +11,8 @@ import (
 
 // Typography ...
 type Typography struct {
-	txtBatch *pixel.Batch
-	txt      *text.Text
+	TxtBatch *pixel.Batch
+	Txt      *text.Text
 }
 
 // NewTypography ...
@@ -26,8 +28,17 @@ func NewTypography() *Typography {
 	fontFace := truetype.NewFace(ttf, &truetype.Options{Size: 10})
 	txtAtlas := text.NewAtlas(fontFace, text.ASCII)
 
-	typ.txtBatch = pixel.NewBatch(&pixel.TrianglesData{}, txtAtlas.Picture())
-	typ.txt = text.New(pixel.ZV, txtAtlas)
+	typ.TxtBatch = pixel.NewBatch(&pixel.TrianglesData{}, txtAtlas.Picture())
+	typ.Txt = text.New(pixel.ZV, txtAtlas)
 
 	return typ
+}
+
+// DrawTextToBatch ...
+func (typ *Typography) DrawTextToBatch(s string, vec pixel.Vec, txtBatch *pixel.Batch, txt *text.Text) {
+	txt.Clear()
+	txt.Color = color.RGBA{0x00, 0x00, 0x00, 0xff}
+	txt.Dot = vec
+	txt.WriteString(s)
+	txt.Draw(txtBatch, pixel.IM)
 }

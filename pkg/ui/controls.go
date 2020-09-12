@@ -7,7 +7,6 @@ import (
 	"github.com/faiface/pixel"
 	"github.com/faiface/pixel/imdraw"
 	"github.com/faiface/pixel/pixelgl"
-	"github.com/willgarrison/go-noise/pkg/helpers"
 	"github.com/willgarrison/go-noise/pkg/signals"
 )
 
@@ -18,7 +17,7 @@ type Controls struct {
 	Buttons    []*Button
 	Imd        *imdraw.IMDraw
 	ImdBatch   *imdraw.IMDraw
-	typ        *Typography
+	Typ        *Typography
 }
 
 // NewControls ...
@@ -37,7 +36,7 @@ func NewControls(r pixel.Rect) *Controls {
 	c.Imd = imdraw.New(nil)
 	c.ImdBatch = imdraw.New(nil)
 
-	c.typ = NewTypography()
+	c.Typ = NewTypography()
 
 	return c
 }
@@ -74,38 +73,38 @@ func (c *Controls) Compose() {
 	)
 	c.Imd.Line(1)
 
-	c.typ.txtBatch.Clear()
+	c.Typ.TxtBatch.Clear()
 
 	for i := range c.Buttons {
 
 		// Labels
 		str := c.Buttons[i].Label
-		strX := c.Buttons[i].X + (c.Buttons[i].W / 2) - (c.typ.txt.BoundsOf(str).W() / 2)
-		strY := c.Buttons[i].Y + (c.Buttons[i].H / 2) - (c.typ.txt.BoundsOf(str).H() / 2)
-		helpers.DrawTextToBatch(str, pixel.V(strX, strY), c.typ.txtBatch, c.typ.txt)
+		strX := c.Buttons[i].X + (c.Buttons[i].W / 2) - (c.Typ.Txt.BoundsOf(str).W() / 2)
+		strY := c.Buttons[i].Y + (c.Buttons[i].H / 2) - (c.Typ.Txt.BoundsOf(str).H() / 2)
+		c.Typ.DrawTextToBatch(str, pixel.V(strX, strY), c.Typ.TxtBatch, c.Typ.Txt)
 	}
 
 	for i := range c.Dials {
 
 		// Labels
 		str := c.Dials[i].Label
-		strX := c.Dials[i].center.X - (c.typ.txt.BoundsOf(str).W() / 2)
+		strX := c.Dials[i].center.X - (c.Typ.Txt.BoundsOf(str).W() / 2)
 		strY := c.Dials[i].y - 20
-		helpers.DrawTextToBatch(str, pixel.V(strX, strY), c.typ.txtBatch, c.typ.txt)
+		c.Typ.DrawTextToBatch(str, pixel.V(strX, strY), c.Typ.TxtBatch, c.Typ.Txt)
 
 		// Values
 		str = fmt.Sprintf("%.3f", c.Dials[i].Value)
-		strX = c.Dials[i].center.X - (c.typ.txt.BoundsOf(str).W() / 2)
+		strX = c.Dials[i].center.X - (c.Typ.Txt.BoundsOf(str).W() / 2)
 		strY = c.Dials[i].y - 10
-		helpers.DrawTextToBatch(str, pixel.V(strX, strY), c.typ.txtBatch, c.typ.txt)
+		c.Typ.DrawTextToBatch(str, pixel.V(strX, strY), c.Typ.TxtBatch, c.Typ.Txt)
 	}
 }
 
-// Draw ...
-func (c *Controls) Draw(win *pixelgl.Window) {
+// DrawTo ...
+func (c *Controls) DrawTo(imd *imdraw.IMDraw) {
 
 	// Draw static content
-	c.Imd.Draw(win)
+	c.Imd.Draw(imd)
 
 	// Draw dynamic content to batch
 	c.ImdBatch.Clear()
@@ -117,10 +116,7 @@ func (c *Controls) Draw(win *pixelgl.Window) {
 	}
 
 	// Draw batch
-	c.ImdBatch.Draw(win)
-
-	// Draw textBatch
-	c.typ.txtBatch.Draw(win)
+	c.ImdBatch.Draw(imd)
 }
 
 // RespondToInput ...
@@ -141,6 +137,7 @@ func (c *Controls) RespondToInput(win *pixelgl.Window, sendToChan chan signals.C
 				}
 				c.Send(sendToChan, cv)
 				c.ResetDials()
+				c.Compose()
 			}
 		}
 
