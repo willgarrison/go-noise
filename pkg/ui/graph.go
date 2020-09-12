@@ -14,8 +14,7 @@ import (
 
 // Graph ...
 type Graph struct {
-	W              float64
-	H              float64
+	X, Y, W, H     float64
 	Matrix         [][]uint32
 	Imd            *imdraw.IMDraw
 	ShouldReset    bool
@@ -30,12 +29,14 @@ type Graph struct {
 }
 
 // NewGraph ...
-func NewGraph(w, h float64) *Graph {
+func NewGraph(r pixel.Rect) *Graph {
 
 	g := new(Graph)
 
-	g.W = w
-	g.H = h
+	g.X = r.Min.X
+	g.Y = r.Min.Y
+	g.W = r.Max.X
+	g.H = r.Max.Y
 
 	g.Imd = imdraw.New(nil)
 
@@ -74,14 +75,6 @@ func (g *Graph) Compose() {
 
 	g.Imd.Clear()
 
-	// Background
-	// g.Imd.Color = color.RGBA{0xd0, 0xd0, 0xd0, 0xff}
-	// g.Imd.Push(
-	// 	pixel.V(0, 0),
-	// 	pixel.V(g.W, g.H),
-	// )
-	// g.Imd.Rectangle(0)
-
 	// Draw active blocks
 	g.Imd.Color = color.RGBA{0x00, 0x00, 0x00, 0xff}
 	blockWidth := g.W / float64(g.XSteps)
@@ -89,10 +82,13 @@ func (g *Graph) Compose() {
 	for x := range g.Matrix {
 		for y := range g.Matrix[x] {
 			if g.Matrix[x][y] == 1 {
-				g.Imd.Color = color.RGBA{0x00, 0x00, 0x00, 0xff}
+				x1 := float64(x) * g.W / float64(g.XSteps)
+				y1 := float64(y) * g.H / float64(g.YSteps)
+				x2 := float64(x)*g.W/float64(g.XSteps) + blockWidth
+				y2 := float64(y)*g.H/float64(g.YSteps) + blockHeight
 				g.Imd.Push(
-					pixel.V((float64(x)*g.W/float64(g.XSteps)), (float64(y)*g.H/float64(g.YSteps))),
-					pixel.V((float64(x)*g.W/float64(g.XSteps)+blockWidth), (float64(y)*g.H/float64(g.YSteps)+blockHeight)),
+					pixel.V(x1, y1),
+					pixel.V(x2, y2),
 				)
 				g.Imd.Rectangle(0)
 			}

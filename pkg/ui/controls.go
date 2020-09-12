@@ -22,14 +22,14 @@ type Controls struct {
 }
 
 // NewControls ...
-func NewControls(x, y, w, h float64) *Controls {
+func NewControls(r pixel.Rect) *Controls {
 
 	c := new(Controls)
 
-	c.X = x
-	c.Y = y
-	c.W = w
-	c.H = h
+	c.X = r.Min.X
+	c.Y = r.Min.Y
+	c.W = r.Max.X
+	c.H = r.Max.Y
 
 	c.ResetButtons()
 	c.ResetDials()

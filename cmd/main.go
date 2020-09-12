@@ -1,19 +1,17 @@
 package main
 
 import (
+	"github.com/faiface/pixel"
 	"github.com/faiface/pixel/pixelgl"
 	"github.com/willgarrison/go-noise/pkg/signals"
 	"github.com/willgarrison/go-noise/pkg/ui"
 	"golang.org/x/image/colornames"
 )
 
-const (
-	windowWidth    float64 = 1200.0
-	windowHeight   float64 = 900.0
-	graphWidth     float64 = 1000.0
-	graphHeight    float64 = 900.0
-	controlsWidth  float64 = 200.0
-	controlsHeight float64 = 900.0
+var (
+	windowRect   pixel.Rect = pixel.R(0, 0, 1200, 900)
+	controlsRect pixel.Rect = pixel.R(1000, 0, 200, 900)
+	graphRect    pixel.Rect = pixel.R(0, 0, 1000, 900)
 )
 
 func main() {
@@ -23,12 +21,12 @@ func main() {
 func run() {
 
 	// Initialize window
-	win := ui.NewWindow(windowWidth, windowHeight)
+	win := ui.NewWindow(windowRect.W(), windowRect.H())
 
-	c := ui.NewControls(1000, 0, controlsWidth, controlsHeight)
+	c := ui.NewControls(controlsRect)
 	c.Compose()
 
-	g := ui.NewGraph(graphWidth, graphHeight)
+	g := ui.NewGraph(graphRect)
 	g.Compose()
 
 	graphChan := make(chan signals.ControlValue)
