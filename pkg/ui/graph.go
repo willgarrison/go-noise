@@ -15,11 +15,17 @@ import (
 	"gitlab.com/gomidi/midi/writer"
 )
 
+// Point ...
+type Point struct {
+	x, y uint32
+}
+
 // Graph ...
 type Graph struct {
 	Rect           pixel.Rect
 	W, H           float64
 	Matrix         [][]uint32
+	UserBlocks     []Point
 	Imd            *imdraw.IMDraw
 	CtrlChannel    chan signals.CtrlSignal
 	BeatChannel    chan signals.BeatSignal
@@ -53,7 +59,7 @@ func NewGraph(r pixel.Rect, ao midi.Out) *Graph {
 	g.Imd = imdraw.New(nil)
 
 	// Initialize playhead
-	g.Playhead = NewPlayhead(pixel.R(g.Rect.Min.X, g.Rect.Min.Y, 3, g.Rect.Max.Y))
+	g.Playhead = NewPlayhead(pixel.R(g.Rect.Min.X, g.Rect.Min.Y, g.Rect.Min.X, g.Rect.Max.Y))
 	g.Playhead.Compose()
 
 	g.Reset()
@@ -101,6 +107,12 @@ func (g *Graph) Compose() {
 	g.Matrix = make([][]uint32, int(g.XSteps))
 	for i := range g.Matrix {
 		g.Matrix[i] = make([]uint32, int(g.YSteps))
+	}
+
+	for _, point := range g.UserBlocks {
+		if int(point.x) < len(g.Matrix) && int(point.y) < len(g.Matrix[0]) {
+			g.Matrix[point.x][point.y] = 1
+		}
 	}
 
 	xPos := uint32(0)
@@ -187,10 +199,34 @@ func (g *Graph) DrawTo(imd *imdraw.IMDraw) {
 // RespondToInput ...
 func (g *Graph) RespondToInput(win *pixelgl.Window) {
 
-	if win.JustPressed(pixelgl.MouseButtonLeft) {
-
+	if win.Pressed(pixelgl.MouseButtonLeft) {
 		pos := win.MousePosition()
-		fmt.Println(pos)
+		if helpers.PosInBounds(pos, g.Rect) {
+			fmt.Println(pos)
+			x := uint32((pos.X - g.Rect.Min.X) / (g.W / float64(g.XSteps)))
+			y := uint32((pos.Y - g.Rect.Min.Y) / (g.H / float64(g.YSteps)))
+			if g.Matrix[x][y] == 0 {
+				// Add
+				g.UserBlocks = append(g.UserBlocks, Point{x, y})
+			}
+			g.Compose()
+		}
+	}
+
+	if win.Pressed(pixelgl.MouseButtonRight) {
+		pos := win.MousePosition()
+		if helpers.PosInBounds(pos, g.Rect) {
+			fmt.Println(pos)
+			x := uint32((pos.X - g.Rect.Min.X) / (g.W / float64(g.XSteps)))
+			y := uint32((pos.Y - g.Rect.Min.Y) / (g.H / float64(g.YSteps)))
+			for i, point := range g.UserBlocks {
+				if point.x == x && point.y == y {
+					// Delete
+					g.UserBlocks = append(g.UserBlocks[:i], g.UserBlocks[i+1:]...)
+				}
+			}
+			g.Compose()
+		}
 	}
 
 	if g.SignalReceived {
@@ -252,7 +288,7 @@ func (g *Graph) ListenToBeatChannel() {
 // SetPlayheadPosition ...
 func (g *Graph) SetPlayheadPosition() {
 	g.Playhead.Imd.Clear()
-	g.Playhead.X = g.Rect.Min.X + (float64(g.BeatIndex) * g.W / float64(g.XSteps))
+	g.Playhead.Rect.Min.X = g.Rect.Min.X + (float64(g.BeatIndex) * g.W / float64(g.XSteps))
 	g.Playhead.Compose()
 }
 
