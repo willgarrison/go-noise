@@ -14,7 +14,6 @@ var (
 	windowRect   pixel.Rect = pixel.R(0, 0, 1200, 900)
 	controlsRect pixel.Rect = pixel.R(1000, 0, 200, 900)
 	graphRect    pixel.Rect = pixel.R(20, 20, 980, 880)
-	bpm          uint16     = 120
 )
 
 func main() {
@@ -36,22 +35,22 @@ func run() {
 	// Initialize batch
 	imdBatch := imdraw.New(nil)
 
-	// Initialize metronome
-	mt := metronome.New(bpm)
-
-	// Initialize controls
-	c := ui.NewControls(controlsRect)
-	c.Compose()
-
 	// Initialize graph
 	g := ui.NewGraph(graphRect, audio.Output)
 	g.Compose()
 
-	// Add pipe between metronome and graph
-	mt.AddBeatChannel(g.BeatChannel)
+	// Initialize metronome
+	m := metronome.New(g.Bpm)
+	m.AddBeatChannel(g.BeatChannel)
+
+	// Initialize controls
+	c := ui.NewControls(controlsRect)
+	c.AddCtrlChannel(g.CtrlChannel)
+	c.AddCtrlChannel(m.CtrlChannel)
+	c.Compose()
 
 	// Start metronome
-	mt.Start()
+	m.Start()
 
 	for !win.Closed() {
 
@@ -59,7 +58,7 @@ func run() {
 
 		imdBatch.Clear()
 
-		c.RespondToInput(win, g.CtrlChannel)
+		c.RespondToInput(win)
 		c.DrawTo(imdBatch)
 		c.Typ.TxtBatch.Draw(win)
 

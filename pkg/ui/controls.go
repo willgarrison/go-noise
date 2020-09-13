@@ -12,12 +12,13 @@ import (
 
 // Controls ...
 type Controls struct {
-	X, Y, W, H float64
-	Dials      []*Dial
-	Buttons    []*Button
-	Imd        *imdraw.IMDraw
-	ImdBatch   *imdraw.IMDraw
-	Typ        *Typography
+	X, Y, W, H   float64
+	Dials        []*Dial
+	Buttons      []*Button
+	Imd          *imdraw.IMDraw
+	ImdBatch     *imdraw.IMDraw
+	Typ          *Typography
+	CtrlChannels []chan signals.CtrlSignal
 }
 
 // NewControls ...
@@ -52,7 +53,7 @@ func (c *Controls) ResetButtons() {
 func (c *Controls) ResetDials() {
 
 	dialSize := 75.0
-	c.Dials = make([]*Dial, 7)
+	c.Dials = make([]*Dial, 8)
 	c.Dials[0] = NewDial("frequency", c.X+20, c.Y+160, dialSize, 0.3, 0.01, 3.0, 0.001)
 	c.Dials[1] = NewDial("lacunarity", c.X+110, c.Y+160, dialSize, 0.9, 0.01, 3.0, 0.01)
 	c.Dials[2] = NewDial("gain", c.X+20, c.Y+270, dialSize, 2.0, 0.01, 3.0, 0.1)
@@ -60,6 +61,7 @@ func (c *Controls) ResetDials() {
 	c.Dials[4] = NewDial("xSteps", c.X+20, c.Y+380, dialSize, 8, 4, 64, 1)
 	c.Dials[5] = NewDial("ySteps", c.X+110, c.Y+380, dialSize, 24, 4, 48, 1)
 	c.Dials[6] = NewDial("offset", c.X+20, c.Y+490, dialSize, 500, 0, 1000, 1)
+	c.Dials[7] = NewDial("bpm", c.X+110, c.Y+490, dialSize, 120, 1, 960, 1)
 }
 
 // Compose ...
@@ -120,27 +122,28 @@ func (c *Controls) DrawTo(imd *imdraw.IMDraw) {
 }
 
 // RespondToInput ...
-func (c *Controls) RespondToInput(win *pixelgl.Window, sendToChan chan signals.CtrlSignal) {
+func (c *Controls) RespondToInput(win *pixelgl.Window) {
 
-	// Listen for mouse input
 	if win.JustPressed(pixelgl.MouseButtonLeft) {
 
 		pos := win.MousePosition()
 
+		// Buttons
 		for i := range c.Buttons {
 
 			// Reset button
 			if c.Buttons[i].JustPressed(pos) {
-				cv := signals.CtrlSignal{
+				ctrlSignal := signals.CtrlSignal{
 					Label: c.Buttons[i].Label,
 					Value: 1.0,
 				}
-				c.Send(sendToChan, cv)
+				c.Send(ctrlSignal)
 				c.ResetDials()
 				c.Compose()
 			}
 		}
 
+		// Dails
 		for i := range c.Dials {
 			c.Dials[i].JustPressed(pos)
 		}
@@ -150,18 +153,17 @@ func (c *Controls) RespondToInput(win *pixelgl.Window, sendToChan chan signals.C
 
 		pos := win.MousePosition()
 
+		// Dails
 		for i := range c.Dials {
 
 			c.Dials[i].Pressed(pos)
 
 			if c.Dials[i].IsUnread {
-
-				cv := signals.CtrlSignal{
+				ctrlSignal := signals.CtrlSignal{
 					Label: c.Dials[i].Label,
 					Value: c.Dials[i].Value,
 				}
-
-				c.Send(sendToChan, cv)
+				c.Send(ctrlSignal)
 				c.Dials[i].IsUnread = false
 				c.Compose()
 			}
@@ -169,7 +171,15 @@ func (c *Controls) RespondToInput(win *pixelgl.Window, sendToChan chan signals.C
 	}
 }
 
+// AddCtrlChannel ...
+func (c *Controls) AddCtrlChannel(ctrlChannel chan signals.CtrlSignal) {
+	c.CtrlChannels = append(c.CtrlChannels, ctrlChannel)
+}
+
 // Send ...
-func (c *Controls) Send(sendToChan chan signals.CtrlSignal, newCtrlSignal signals.CtrlSignal) {
-	sendToChan <- newCtrlSignal
+func (c *Controls) Send(ctrlSignal signals.CtrlSignal) {
+	// Send ctrl signal to all subscribers
+	for index := range c.CtrlChannels {
+		c.CtrlChannels[index] <- ctrlSignal
+	}
 }

@@ -36,6 +36,7 @@ type Graph struct {
 	XSteps         uint32
 	YSteps         uint32
 	Offset         uint32
+	Bpm            uint32
 }
 
 // NewGraph ...
@@ -89,6 +90,7 @@ func (g *Graph) Reset() {
 	g.XSteps = 8
 	g.YSteps = 24
 	g.Offset = 500
+	g.Bpm = 120
 }
 
 // Compose ...

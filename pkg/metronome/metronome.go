@@ -12,43 +12,74 @@ type Metronome struct {
 	Ticker       *time.Ticker
 	BeatSignal   signals.BeatSignal
 	BeatChannels []chan signals.BeatSignal
+	CtrlChannel  chan signals.CtrlSignal
 }
 
 // New creates a new instance of Metronome
-func New(bpm uint16) *Metronome {
+func New(bpm uint32) *Metronome {
 
 	period := bpmToPeriod(bpm)
 
-	mt := &Metronome{
+	m := &Metronome{
 		Period: period,
 		Ticker: time.NewTicker(period),
 	}
 
-	return mt
+	m.CtrlChannel = make(chan signals.CtrlSignal)
+	m.ListenToCtrlChannel()
+
+	return m
+}
+
+// SetBpm converts bpm to a time.Duration and updates the current period
+func (m *Metronome) SetBpm(bpm uint32) {
+	period := bpmToPeriod(bpm)
+	m.SetPeriod(period)
+}
+
+// SetPeriod updates the current period
+func (m *Metronome) SetPeriod(period time.Duration) {
+	m.Period = period
+	m.Ticker.Reset(period)
 }
 
 // AddBeatChannel ...
-func (mt *Metronome) AddBeatChannel(beatChannel chan signals.BeatSignal) {
-	mt.BeatChannels = append(mt.BeatChannels, beatChannel)
+func (m *Metronome) AddBeatChannel(beatChannel chan signals.BeatSignal) {
+	m.BeatChannels = append(m.BeatChannels, beatChannel)
 }
 
 // Start ...
-func (mt *Metronome) Start() {
+func (m *Metronome) Start() {
 	go func() {
 		for {
 			select {
-			case <-mt.Ticker.C:
+			case <-m.Ticker.C:
 				// Send the beat to all BeatChannels
-				for index := range mt.BeatChannels {
-					mt.BeatChannels[index] <- mt.BeatSignal
+				for index := range m.BeatChannels {
+					m.BeatChannels[index] <- m.BeatSignal
 				}
 				// Increment the beat
-				mt.BeatSignal.Value++
+				m.BeatSignal.Value++
 			}
 		}
 	}()
 }
 
-func bpmToPeriod(bpm uint16) time.Duration {
+// ListenToCtrlChannel ...
+func (m *Metronome) ListenToCtrlChannel() {
+	go func() {
+		for {
+			select {
+			case ctrlSignal := <-m.CtrlChannel:
+				switch ctrlSignal.Label {
+				case "bpm":
+					m.SetBpm(uint32(ctrlSignal.Value))
+				}
+			}
+		}
+	}()
+}
+
+func bpmToPeriod(bpm uint32) time.Duration {
 	return time.Duration(60000/bpm) * time.Millisecond
 }
