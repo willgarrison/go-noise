@@ -120,7 +120,7 @@ func (c *Controls) DrawTo(imd *imdraw.IMDraw) {
 }
 
 // RespondToInput ...
-func (c *Controls) RespondToInput(win *pixelgl.Window, sendToChan chan signals.ControlValue) {
+func (c *Controls) RespondToInput(win *pixelgl.Window, sendToChan chan signals.CtrlSignal) {
 
 	// Listen for mouse input
 	if win.JustPressed(pixelgl.MouseButtonLeft) {
@@ -131,7 +131,7 @@ func (c *Controls) RespondToInput(win *pixelgl.Window, sendToChan chan signals.C
 
 			// Reset button
 			if c.Buttons[i].JustPressed(pos) {
-				cv := signals.ControlValue{
+				cv := signals.CtrlSignal{
 					Label: c.Buttons[i].Label,
 					Value: 1.0,
 				}
@@ -156,7 +156,7 @@ func (c *Controls) RespondToInput(win *pixelgl.Window, sendToChan chan signals.C
 
 			if c.Dials[i].IsUnread {
 
-				cv := signals.ControlValue{
+				cv := signals.CtrlSignal{
 					Label: c.Dials[i].Label,
 					Value: c.Dials[i].Value,
 				}
@@ -170,6 +170,6 @@ func (c *Controls) RespondToInput(win *pixelgl.Window, sendToChan chan signals.C
 }
 
 // Send ...
-func (c *Controls) Send(sendToChan chan signals.ControlValue, newControlValue signals.ControlValue) {
-	sendToChan <- newControlValue
+func (c *Controls) Send(sendToChan chan signals.CtrlSignal, newCtrlSignal signals.CtrlSignal) {
+	sendToChan <- newCtrlSignal
 }

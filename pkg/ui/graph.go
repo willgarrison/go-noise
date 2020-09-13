@@ -19,7 +19,8 @@ type Graph struct {
 	X, Y, W, H     float64
 	Matrix         [][]uint32
 	Imd            *imdraw.IMDraw
-	BeatChannel    chan uint8
+	CtrlChannel    chan signals.CtrlSignal
+	BeatChannel    chan signals.BeatSignal
 	BeatIndex      uint8
 	NotesOn        []uint8
 	Scale          []uint8
@@ -69,7 +70,11 @@ func NewGraph(r pixel.Rect, ao midi.Out) *Graph {
 
 	g.MidiWriter = writer.New(ao)
 	g.MidiWriter.SetChannel(1)
-	g.BeatChannel = make(chan uint8)
+
+	g.CtrlChannel = make(chan signals.CtrlSignal)
+	g.ListenToCtrlChannel()
+
+	g.BeatChannel = make(chan signals.BeatSignal)
 	g.ListenToBeatChannel()
 
 	return g
@@ -140,34 +145,34 @@ func (g *Graph) RespondToInput(win *pixelgl.Window) {
 	}
 }
 
-// ListenToCtrlChan ...
-func (g *Graph) ListenToCtrlChan(ctrlChan chan signals.ControlValue) {
-	for {
-		select {
-		case msg := <-ctrlChan:
-
-			switch msg.Label {
-			case "reset":
-				g.Reset()
-			case "frequency":
-				g.Frequency = float32(msg.Value)
-			case "lacunarity":
-				g.Lacunarity = float32(msg.Value)
-			case "gain":
-				g.Gain = float32(msg.Value)
-			case "octaves":
-				g.Octaves = uint8(msg.Value)
-			case "xSteps":
-				g.XSteps = uint32(msg.Value)
-			case "ySteps":
-				g.YSteps = uint32(msg.Value)
-			case "offset":
-				g.Offset = uint32(msg.Value)
+// ListenToCtrlChannel ...
+func (g *Graph) ListenToCtrlChannel() {
+	go func() {
+		for {
+			select {
+			case ctrlSignal := <-g.CtrlChannel:
+				switch ctrlSignal.Label {
+				case "reset":
+					g.Reset()
+				case "frequency":
+					g.Frequency = float32(ctrlSignal.Value)
+				case "lacunarity":
+					g.Lacunarity = float32(ctrlSignal.Value)
+				case "gain":
+					g.Gain = float32(ctrlSignal.Value)
+				case "octaves":
+					g.Octaves = uint8(ctrlSignal.Value)
+				case "xSteps":
+					g.XSteps = uint32(ctrlSignal.Value)
+				case "ySteps":
+					g.YSteps = uint32(ctrlSignal.Value)
+				case "offset":
+					g.Offset = uint32(ctrlSignal.Value)
+				}
+				g.SignalReceived = true
 			}
-
-			g.SignalReceived = true
 		}
-	}
+	}()
 }
 
 // ListenToBeatChannel ...
@@ -175,8 +180,8 @@ func (g *Graph) ListenToBeatChannel() {
 	go func() {
 		for {
 			select {
-			case beat := <-g.BeatChannel:
-				g.BeatIndex = beat % uint8(len(g.Matrix))
+			case beatSignal := <-g.BeatChannel:
+				g.BeatIndex = beatSignal.Value % uint8(len(g.Matrix))
 				g.Stop()
 				for y, val := range g.Matrix[g.BeatIndex] {
 					if val == 1 {

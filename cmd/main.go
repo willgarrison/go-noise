@@ -6,7 +6,6 @@ import (
 	"github.com/faiface/pixel/pixelgl"
 	"github.com/willgarrison/go-noise/pkg/metronome"
 	"github.com/willgarrison/go-noise/pkg/midi"
-	"github.com/willgarrison/go-noise/pkg/signals"
 	"github.com/willgarrison/go-noise/pkg/ui"
 	"golang.org/x/image/colornames"
 )
@@ -48,9 +47,6 @@ func run() {
 	g := ui.NewGraph(graphRect, audio.Output)
 	g.Compose()
 
-	ctrlChan := make(chan signals.ControlValue)
-	go g.ListenToCtrlChan(ctrlChan)
-
 	// Add pipe between metronome and graph
 	mt.AddBeatChannel(g.BeatChannel)
 
@@ -63,7 +59,7 @@ func run() {
 
 		imdBatch.Clear()
 
-		c.RespondToInput(win, ctrlChan)
+		c.RespondToInput(win, g.CtrlChannel)
 		c.DrawTo(imdBatch)
 		c.Typ.TxtBatch.Draw(win)
 

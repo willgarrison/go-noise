@@ -2,14 +2,16 @@ package metronome
 
 import (
 	"time"
+
+	"github.com/willgarrison/go-noise/pkg/signals"
 )
 
 // Metronome ...
 type Metronome struct {
 	Period       time.Duration
 	Ticker       *time.Ticker
-	Beat         uint8
-	BeatChannels []chan uint8
+	BeatSignal   signals.BeatSignal
+	BeatChannels []chan signals.BeatSignal
 }
 
 // New creates a new instance of Metronome
@@ -26,8 +28,8 @@ func New(bpm uint16) *Metronome {
 }
 
 // AddBeatChannel ...
-func (mt *Metronome) AddBeatChannel(bc chan uint8) {
-	mt.BeatChannels = append(mt.BeatChannels, bc)
+func (mt *Metronome) AddBeatChannel(beatChannel chan signals.BeatSignal) {
+	mt.BeatChannels = append(mt.BeatChannels, beatChannel)
 }
 
 // Start ...
@@ -38,10 +40,10 @@ func (mt *Metronome) Start() {
 			case <-mt.Ticker.C:
 				// Send the beat to all BeatChannels
 				for index := range mt.BeatChannels {
-					mt.BeatChannels[index] <- mt.Beat
+					mt.BeatChannels[index] <- mt.BeatSignal
 				}
 				// Increment the beat
-				mt.Beat++
+				mt.BeatSignal.Value++
 			}
 		}
 	}()
