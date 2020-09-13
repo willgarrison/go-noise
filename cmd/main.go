@@ -4,6 +4,8 @@ import (
 	"github.com/faiface/pixel"
 	"github.com/faiface/pixel/imdraw"
 	"github.com/faiface/pixel/pixelgl"
+	"github.com/willgarrison/go-noise/pkg/metronome"
+	"github.com/willgarrison/go-noise/pkg/midi"
 	"github.com/willgarrison/go-noise/pkg/signals"
 	"github.com/willgarrison/go-noise/pkg/ui"
 	"golang.org/x/image/colornames"
@@ -12,8 +14,8 @@ import (
 var (
 	windowRect   pixel.Rect = pixel.R(0, 0, 1200, 900)
 	controlsRect pixel.Rect = pixel.R(1000, 0, 200, 900)
-	graphRect    pixel.Rect = pixel.R(0, 0, 1000, 900)
-	bpm          float64    = 60
+	graphRect    pixel.Rect = pixel.R(20, 20, 980, 880)
+	bpm          uint16     = 120
 )
 
 func main() {
@@ -22,22 +24,38 @@ func main() {
 
 func run() {
 
+	// Initialize midi output
+	audio, err := midi.New()
+	if err != nil {
+		panic(err.Error())
+	}
+	defer audio.Driver.Close()
+
 	// Initialize window
 	win := ui.NewWindow(windowRect.W(), windowRect.H())
 
+	// Initialize batch
+	imdBatch := imdraw.New(nil)
+
+	// Initialize metronome
+	mt := metronome.New(bpm)
+
+	// Initialize controls
 	c := ui.NewControls(controlsRect)
 	c.Compose()
 
-	g := ui.NewGraph(graphRect)
+	// Initialize graph
+	g := ui.NewGraph(graphRect, audio.Output)
 	g.Compose()
 
 	ctrlChan := make(chan signals.ControlValue)
-	go g.Listen(ctrlChan)
+	go g.ListenToCtrlChan(ctrlChan)
 
-	p := ui.NewPlayhead(graphRect.Min.X, graphRect.Max.Y)
-	p.Compose()
+	// Add pipe between metronome and graph
+	mt.AddBeatChannel(g.BeatChannel)
 
-	imdBatch := imdraw.New(nil)
+	// Start metronome
+	mt.Start()
 
 	for !win.Closed() {
 
@@ -51,8 +69,6 @@ func run() {
 
 		g.RespondToInput(win)
 		g.DrawTo(imdBatch)
-
-		p.DrawTo(imdBatch)
 
 		imdBatch.Draw(win)
 

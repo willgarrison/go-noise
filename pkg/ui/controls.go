@@ -54,11 +54,11 @@ func (c *Controls) ResetDials() {
 	dialSize := 75.0
 	c.Dials = make([]*Dial, 7)
 	c.Dials[0] = NewDial("frequency", c.X+20, c.Y+160, dialSize, 0.3, 0.01, 3.0, 0.001)
-	c.Dials[1] = NewDial("lacunarity", c.X+110, c.Y+160, dialSize, 0.5, 0.01, 3.0, 0.01)
+	c.Dials[1] = NewDial("lacunarity", c.X+110, c.Y+160, dialSize, 0.9, 0.01, 3.0, 0.01)
 	c.Dials[2] = NewDial("gain", c.X+20, c.Y+270, dialSize, 2.0, 0.01, 3.0, 0.1)
 	c.Dials[3] = NewDial("octaves", c.X+110, c.Y+270, dialSize, 5, 1, 10, 1)
-	c.Dials[4] = NewDial("xSteps", c.X+20, c.Y+380, dialSize, 32, 4, 64, 1)
-	c.Dials[5] = NewDial("ySteps", c.X+110, c.Y+380, dialSize, 48, 4, 96, 1)
+	c.Dials[4] = NewDial("xSteps", c.X+20, c.Y+380, dialSize, 8, 4, 64, 1)
+	c.Dials[5] = NewDial("ySteps", c.X+110, c.Y+380, dialSize, 24, 4, 48, 1)
 	c.Dials[6] = NewDial("offset", c.X+20, c.Y+490, dialSize, 500, 0, 1000, 1)
 }
 

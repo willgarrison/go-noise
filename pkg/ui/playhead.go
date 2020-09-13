@@ -9,21 +9,20 @@ import (
 
 // Playhead marks the current point on the timeline
 type Playhead struct {
-	Imd    *imdraw.IMDraw
-	Pos    float64
-	Height float64
+	Imd        *imdraw.IMDraw
+	X, Y, W, H float64
 }
 
 // NewPlayhead creates and returns a pointer to a Playhead
-func NewPlayhead(pos float64, height float64) *Playhead {
+func NewPlayhead(r pixel.Rect) *Playhead {
 
 	p := &Playhead{
-		Imd:    imdraw.New(nil),
-		Pos:    pos,
-		Height: height,
+		Imd: imdraw.New(nil),
+		X:   r.Min.X,
+		Y:   r.Min.Y,
+		W:   r.Max.X,
+		H:   r.Max.Y,
 	}
-
-	p.Compose()
 
 	return p
 }
@@ -35,10 +34,10 @@ func (p *Playhead) Compose() {
 
 	p.Imd.Color = color.RGBA{0xff, 0x42, 0x42, 0xff}
 	p.Imd.Push(
-		pixel.V(p.Pos, 0),
-		pixel.V(p.Pos, p.Height),
+		pixel.V(p.X, p.Y),
+		pixel.V(p.X, p.H),
 	)
-	p.Imd.Line(3)
+	p.Imd.Line(1)
 }
 
 // DrawTo ...
