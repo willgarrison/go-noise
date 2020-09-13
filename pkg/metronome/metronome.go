@@ -72,6 +72,8 @@ func (m *Metronome) ListenToCtrlChannel() {
 			select {
 			case ctrlSignal := <-m.CtrlChannel:
 				switch ctrlSignal.Label {
+				case "reset":
+					m.SetBpm(120)
 				case "bpm":
 					m.SetBpm(uint32(ctrlSignal.Value))
 				}

@@ -16,7 +16,8 @@ import (
 
 // Graph ...
 type Graph struct {
-	X, Y, W, H     float64
+	Rect           pixel.Rect
+	W, H           float64
 	Matrix         [][]uint32
 	Imd            *imdraw.IMDraw
 	CtrlChannel    chan signals.CtrlSignal
@@ -44,15 +45,14 @@ func NewGraph(r pixel.Rect, ao midi.Out) *Graph {
 
 	g := new(Graph)
 
-	g.X = r.Min.X
-	g.Y = r.Min.Y
-	g.W = r.Max.X
-	g.H = r.Max.Y
+	g.Rect = r
+	g.W = g.Rect.W()
+	g.H = g.Rect.H()
 
 	g.Imd = imdraw.New(nil)
 
 	// Initialize playhead
-	g.Playhead = NewPlayhead(pixel.R(g.X, g.Y, 3, g.H))
+	g.Playhead = NewPlayhead(pixel.R(g.Rect.Min.X, g.Rect.Min.Y, 3, g.Rect.Max.Y))
 	g.Playhead.Compose()
 
 	g.Reset()
@@ -112,24 +112,68 @@ func (g *Graph) Compose() {
 
 	g.Imd.Clear()
 
-	// Draw active blocks
-	g.Imd.Color = color.RGBA{0x00, 0x00, 0x00, 0xff}
+	// Background
+	g.Imd.Color = color.RGBA{0xee, 0xee, 0xee, 0xff}
+	g.Imd.Push(
+		pixel.V(g.Rect.Min.X, g.Rect.Min.Y),
+		pixel.V(g.Rect.Max.X, g.Rect.Max.Y),
+	)
+	g.Imd.Rectangle(0)
+
 	blockWidth := g.W / float64(g.XSteps)
 	blockHeight := g.H / float64(g.YSteps)
+
 	for x := range g.Matrix {
 		for y := range g.Matrix[x] {
+
+			// Draw active blocks
 			if g.Matrix[x][y] == 1 {
-				x1 := g.X + (float64(x) * g.W / float64(g.XSteps))
-				y1 := g.Y + (float64(y) * g.H / float64(g.YSteps))
-				x2 := float64(x)*g.W/float64(g.XSteps) + blockWidth
-				y2 := float64(y)*g.H/float64(g.YSteps) + blockHeight
+				g.Imd.Color = color.RGBA{0x00, 0x00, 0x00, 0xff}
 				g.Imd.Push(
-					pixel.V(x1, y1),
-					pixel.V(x2, y2),
+					pixel.V(
+						g.Rect.Min.X+(float64(x)*blockWidth),
+						g.Rect.Min.Y+(float64(y)*blockHeight),
+					),
+					pixel.V(
+						g.Rect.Min.X+(float64(x)*blockWidth)+blockWidth,
+						g.Rect.Min.Y+(float64(y)*blockHeight)+blockHeight,
+					),
 				)
 				g.Imd.Rectangle(0)
 			}
 		}
+	}
+
+	for x := 0; x <= len(g.Matrix); x++ {
+		// Vertical Lines
+		g.Imd.Color = color.RGBA{0xff, 0xff, 0xff, 0xff}
+		g.Imd.Push(
+			pixel.V(
+				g.Rect.Min.X+(float64(x)*blockWidth),
+				g.Rect.Min.Y,
+			),
+			pixel.V(
+				g.Rect.Min.X+(float64(x)*blockWidth),
+				g.Rect.Max.Y,
+			),
+		)
+		g.Imd.Line(1)
+	}
+
+	for y := 0; y <= len(g.Matrix[0]); y++ {
+		// Horizontal Lines
+		g.Imd.Color = color.RGBA{0xff, 0xff, 0xff, 0xff}
+		g.Imd.Push(
+			pixel.V(
+				g.Rect.Min.X,
+				g.Rect.Min.Y+(float64(y)*blockHeight),
+			),
+			pixel.V(
+				g.Rect.Max.X,
+				g.Rect.Min.Y+(float64(y)*blockHeight),
+			),
+		)
+		g.Imd.Line(1)
 	}
 }
 
@@ -199,9 +243,8 @@ func (g *Graph) ListenToBeatChannel() {
 
 // SetPlayheadPosition ...
 func (g *Graph) SetPlayheadPosition() {
-
 	g.Playhead.Imd.Clear()
-	g.Playhead.X = g.X + (float64(g.BeatIndex) * g.W / float64(g.XSteps))
+	g.Playhead.X = g.Rect.Min.X + (float64(g.BeatIndex) * g.W / float64(g.XSteps))
 	g.Playhead.Compose()
 }
 
