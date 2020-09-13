@@ -10,26 +10,21 @@ import (
 
 // Button is an interactive UI element
 type Button struct {
-	Imd        *imdraw.IMDraw
-	Bounds     []pixel.Vec
-	Label      string
-	X, Y, W, H float64
+	Imd   *imdraw.IMDraw
+	Rect  pixel.Rect
+	W, H  float64
+	Label string
 }
 
 // NewButton creates and returns a pointer to a Button
-func NewButton(label string, x, y, w, h float64) *Button {
+func NewButton(label string, r pixel.Rect) *Button {
 
 	b := &Button{
-		Imd: imdraw.New(nil),
-		Bounds: []pixel.Vec{
-			pixel.V(x, y),
-			pixel.V(x+w, y+h),
-		},
+		Imd:   imdraw.New(nil),
+		Rect:  r,
+		W:     r.W(),
+		H:     r.H(),
 		Label: label,
-		X:     x,
-		Y:     y,
-		W:     w,
-		H:     h,
 	}
 
 	b.Compose()
@@ -43,11 +38,11 @@ func (b *Button) Compose() {
 	b.Imd.Clear()
 
 	b.Imd.Color = color.RGBA{0x42, 0x42, 0x42, 0xff}
-	b.Imd.Push(b.Bounds[0], b.Bounds[1])
+	b.Imd.Push(b.Rect.Min, b.Rect.Max)
 	b.Imd.Rectangle(1)
 }
 
 // JustPressed ...
 func (b *Button) JustPressed(pos pixel.Vec) bool {
-	return helpers.PosInBounds(pos, b.Bounds)
+	return helpers.PosInBounds(pos, b.Rect)
 }

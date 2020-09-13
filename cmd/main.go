@@ -12,7 +12,7 @@ import (
 
 var (
 	windowRect   pixel.Rect = pixel.R(0, 0, 1200, 900)
-	controlsRect pixel.Rect = pixel.R(1000, 0, 200, 900)
+	controlsRect pixel.Rect = pixel.R(1000, 0, 1200, 900)
 	graphRect    pixel.Rect = pixel.R(20.01, 20.01, 980, 880)
 )
 

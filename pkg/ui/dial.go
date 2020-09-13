@@ -12,10 +12,9 @@ import (
 // Dial is an interactive UI element
 type Dial struct {
 	Imd                              *imdraw.IMDraw
-	Bounds                           []pixel.Vec
+	Rect                             pixel.Rect
+	W, H                             float64
 	Label                            string
-	x, y                             float64
-	size                             float64
 	Value, min, max, scale, newValue float64
 	center                           pixel.Vec
 	indicatorLength                  float64
@@ -27,28 +26,21 @@ type Dial struct {
 }
 
 // NewDial creates and returns a pointer to a Dial
-func NewDial(label string, x, y, size, value, min, max, scale float64) *Dial {
+func NewDial(label string, r pixel.Rect, value, min, max, scale float64) *Dial {
 
 	d := &Dial{
-		Imd: imdraw.New(nil),
-		Bounds: []pixel.Vec{
-			pixel.V(x, y),
-			pixel.V(x+size, y+size),
-		},
-		Label:    label,
-		x:        x,
-		y:        y,
-		size:     size,
-		Value:    value,
-		newValue: value,
-		min:      min,
-		max:      max,
-		scale:    scale,
-		center: pixel.Vec{
-			X: x + (size / 2),
-			Y: y + (size / 2),
-		},
-		indicatorLength:    size / 2.5,
+		Imd:                imdraw.New(nil),
+		Rect:               r,
+		W:                  r.W(),
+		H:                  r.H(),
+		Label:              label,
+		Value:              value,
+		newValue:           value,
+		min:                min,
+		max:                max,
+		scale:              scale,
+		center:             r.Center(),
+		indicatorLength:    r.W() / 2.5,
 		indicatorDegree:    (math.Pi * 2) / max,
 		indicatorLineWidth: 3,
 	}
@@ -66,7 +58,7 @@ func (d *Dial) Compose() {
 	// Background
 	d.Imd.Color = color.RGBA{0xd0, 0xd0, 0xd0, 0xff}
 	d.Imd.Push(d.center)
-	d.Imd.Circle(d.size/2, 0)
+	d.Imd.Circle(d.W/2, 0)
 
 	// Indicator line
 	d.Imd.Color = color.RGBA{0xff, 0xff, 0xff, 0xff}
@@ -85,7 +77,7 @@ func (d *Dial) JustPressed(pos pixel.Vec) {
 
 	d.mouseInteraction = false
 
-	if helpers.PosInBounds(pos, d.Bounds) {
+	if helpers.PosInBounds(pos, d.Rect) {
 		d.mouseInteraction = true
 		d.initialMousePosition = pos
 	}

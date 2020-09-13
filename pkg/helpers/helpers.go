@@ -32,12 +32,6 @@ func Constrain(n, low, high float64) float64 {
 }
 
 // PosInBounds ...
-func PosInBounds(pos pixel.Vec, bounds []pixel.Vec) bool {
-	if pos.X > bounds[0].X &&
-		pos.Y > bounds[0].Y &&
-		pos.X < bounds[1].X &&
-		pos.Y < bounds[1].Y {
-		return true
-	}
-	return false
+func PosInBounds(pos pixel.Vec, rect pixel.Rect) bool {
+	return rect.Contains(pos)
 }

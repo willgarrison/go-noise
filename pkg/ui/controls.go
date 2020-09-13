@@ -12,7 +12,8 @@ import (
 
 // Controls ...
 type Controls struct {
-	X, Y, W, H   float64
+	Rect         pixel.Rect
+	W, H         float64
 	Dials        []*Dial
 	Buttons      []*Button
 	Imd          *imdraw.IMDraw
@@ -26,10 +27,9 @@ func NewControls(r pixel.Rect) *Controls {
 
 	c := new(Controls)
 
-	c.X = r.Min.X
-	c.Y = r.Min.Y
-	c.W = r.Max.X
-	c.H = r.Max.Y
+	c.Rect = r
+	c.W = r.W()
+	c.H = r.H()
 
 	c.ResetButtons()
 	c.ResetDials()
@@ -46,32 +46,45 @@ func NewControls(r pixel.Rect) *Controls {
 func (c *Controls) ResetButtons() {
 
 	c.Buttons = make([]*Button, 1)
-	c.Buttons[0] = NewButton("reset", c.X+20, c.Y+20, 160, 90)
+	c.Buttons[0] = NewButton("reset", pixel.R(c.Rect.Min.X+20, c.Rect.Min.Y+20, c.Rect.Max.X-20, c.Rect.Min.Y+90))
 }
 
 // ResetDials ..
 func (c *Controls) ResetDials() {
 
-	dialSize := 75.0
+	dWidth := 70.0
+	dHeight := 70.0
+
+	columnPos := []float64{
+		c.Rect.Min.X + 20,
+		c.Rect.Min.X + 110,
+	}
+
+	rowPos := []float64{
+		c.Rect.Min.Y + 160,
+		c.Rect.Min.Y + 270,
+		c.Rect.Min.Y + 380,
+		c.Rect.Min.Y + 490,
+	}
+
 	c.Dials = make([]*Dial, 8)
-	c.Dials[0] = NewDial("frequency", c.X+20, c.Y+160, dialSize, 0.3, 0.01, 3.0, 0.001)
-	c.Dials[1] = NewDial("lacunarity", c.X+110, c.Y+160, dialSize, 0.9, 0.01, 3.0, 0.01)
-	c.Dials[2] = NewDial("gain", c.X+20, c.Y+270, dialSize, 2.0, 0.01, 3.0, 0.1)
-	c.Dials[3] = NewDial("octaves", c.X+110, c.Y+270, dialSize, 5, 1, 10, 1)
-	c.Dials[4] = NewDial("xSteps", c.X+20, c.Y+380, dialSize, 8, 4, 64, 1)
-	c.Dials[5] = NewDial("ySteps", c.X+110, c.Y+380, dialSize, 24, 4, 48, 1)
-	c.Dials[6] = NewDial("offset", c.X+20, c.Y+490, dialSize, 500, 0, 1000, 1)
-	c.Dials[7] = NewDial("bpm", c.X+110, c.Y+490, dialSize, 120, 1, 960, 1)
+	c.Dials[0] = NewDial("frequency", pixel.R(columnPos[0], rowPos[0], columnPos[0]+dWidth, rowPos[0]+dHeight), 0.3, 0.01, 3.0, 0.001)
+	c.Dials[1] = NewDial("lacunarity", pixel.R(columnPos[1], rowPos[0], columnPos[1]+dWidth, rowPos[0]+dHeight), 0.9, 0.01, 3.0, 0.01)
+	c.Dials[2] = NewDial("gain", pixel.R(columnPos[0], rowPos[1], columnPos[0]+dWidth, rowPos[1]+dHeight), 2.0, 0.01, 3.0, 0.1)
+	c.Dials[3] = NewDial("octaves", pixel.R(columnPos[1], rowPos[1], columnPos[1]+dWidth, rowPos[1]+dHeight), 5, 1, 10, 1)
+	c.Dials[4] = NewDial("xSteps", pixel.R(columnPos[0], rowPos[2], columnPos[0]+dWidth, rowPos[2]+dHeight), 8, 4, 64, 1)
+	c.Dials[5] = NewDial("ySteps", pixel.R(columnPos[1], rowPos[2], columnPos[1]+dWidth, rowPos[2]+dHeight), 24, 4, 48, 1)
+	c.Dials[6] = NewDial("offset", pixel.R(columnPos[0], rowPos[3], columnPos[0]+dWidth, rowPos[3]+dHeight), 500, 0, 1000, 1)
+	c.Dials[7] = NewDial("bpm", pixel.R(columnPos[1], rowPos[3], columnPos[1]+dWidth, rowPos[3]+dHeight), 120, 1, 960, 1)
 }
 
 // Compose ...
 func (c *Controls) Compose() {
 
-	// Indicator line
 	c.Imd.Color = color.RGBA{0x00, 0x00, 0x00, 0xff}
 	c.Imd.Push(
-		pixel.V(c.X+1, c.Y),
-		pixel.V(c.X+1, c.Y+c.H),
+		pixel.V(c.Rect.Min.X, c.Rect.Min.Y),
+		pixel.V(c.Rect.Min.X, c.Rect.Max.Y),
 	)
 	c.Imd.Line(1)
 
@@ -81,8 +94,8 @@ func (c *Controls) Compose() {
 
 		// Labels
 		str := c.Buttons[i].Label
-		strX := c.Buttons[i].X + (c.Buttons[i].W / 2) - (c.Typ.Txt.BoundsOf(str).W() / 2)
-		strY := c.Buttons[i].Y + (c.Buttons[i].H / 2) - (c.Typ.Txt.BoundsOf(str).H() / 2)
+		strX := c.Buttons[i].Rect.Min.X + (c.Buttons[i].W / 2) - (c.Typ.Txt.BoundsOf(str).W() / 2)
+		strY := c.Buttons[i].Rect.Min.Y + (c.Buttons[i].H / 2) - (c.Typ.Txt.BoundsOf(str).H() / 2)
 		c.Typ.DrawTextToBatch(str, pixel.V(strX, strY), c.Typ.TxtBatch, c.Typ.Txt)
 	}
 
@@ -91,13 +104,13 @@ func (c *Controls) Compose() {
 		// Labels
 		str := c.Dials[i].Label
 		strX := c.Dials[i].center.X - (c.Typ.Txt.BoundsOf(str).W() / 2)
-		strY := c.Dials[i].y - 20
+		strY := c.Dials[i].Rect.Min.Y - 20
 		c.Typ.DrawTextToBatch(str, pixel.V(strX, strY), c.Typ.TxtBatch, c.Typ.Txt)
 
 		// Values
 		str = fmt.Sprintf("%.3f", c.Dials[i].Value)
 		strX = c.Dials[i].center.X - (c.Typ.Txt.BoundsOf(str).W() / 2)
-		strY = c.Dials[i].y - 10
+		strY = c.Dials[i].Rect.Min.Y - 10
 		c.Typ.DrawTextToBatch(str, pixel.V(strX, strY), c.Typ.TxtBatch, c.Typ.Txt)
 	}
 }

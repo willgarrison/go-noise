@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"fmt"
 	"image/color"
 	"math"
 
@@ -185,6 +186,13 @@ func (g *Graph) DrawTo(imd *imdraw.IMDraw) {
 
 // RespondToInput ...
 func (g *Graph) RespondToInput(win *pixelgl.Window) {
+
+	if win.JustPressed(pixelgl.MouseButtonLeft) {
+
+		pos := win.MousePosition()
+		fmt.Println(pos)
+	}
+
 	if g.SignalReceived {
 		g.SignalReceived = false
 		g.Compose()
