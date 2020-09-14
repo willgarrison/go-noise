@@ -45,8 +45,16 @@ func NewControls(r pixel.Rect) *Controls {
 // ResetButtons ..
 func (c *Controls) ResetButtons() {
 
-	c.Buttons = make([]*Button, 1)
-	c.Buttons[0] = NewButton("reset", pixel.R(c.Rect.Min.X+20, c.Rect.Min.Y+20, c.Rect.Max.X-20, c.Rect.Min.Y+90))
+	c.Buttons = []*Button{
+		NewButton("reset", pixel.R(c.Rect.Min.X+20, c.Rect.Min.Y+20, c.Rect.Max.X-20, c.Rect.Min.Y+90)),
+		NewButton("major", pixel.R(c.Rect.Min.X+20, c.Rect.Min.Y+580.01, c.Rect.Max.X-20, c.Rect.Min.Y+610.01)),
+		NewButton("natural", pixel.R(c.Rect.Min.X+20, c.Rect.Min.Y+620.01, c.Rect.Max.X-20, c.Rect.Min.Y+650.01)),
+		NewButton("harmonic", pixel.R(c.Rect.Min.X+20, c.Rect.Min.Y+660.01, c.Rect.Max.X-20, c.Rect.Min.Y+690.01)),
+		NewButton("melodic", pixel.R(c.Rect.Min.X+20, c.Rect.Min.Y+700.01, c.Rect.Max.X-20, c.Rect.Min.Y+730.01)),
+		NewButton("pentatonic", pixel.R(c.Rect.Min.X+20, c.Rect.Min.Y+740.01, c.Rect.Max.X-20, c.Rect.Min.Y+770.01)),
+		NewButton("play", pixel.R(c.Rect.Min.X+20, c.Rect.Min.Y+800.01, c.Rect.Min.X+95, c.Rect.Min.Y+860.01)),
+		NewButton("stop", pixel.R(c.Rect.Min.X+105, c.Rect.Min.Y+800.01, c.Rect.Min.X+180, c.Rect.Min.Y+860.01)),
+	}
 }
 
 // ResetDials ..
@@ -61,10 +69,10 @@ func (c *Controls) ResetDials() {
 	}
 
 	rowPos := []float64{
-		c.Rect.Min.Y + 160,
-		c.Rect.Min.Y + 270,
-		c.Rect.Min.Y + 380,
-		c.Rect.Min.Y + 490,
+		c.Rect.Min.Y + 150,
+		c.Rect.Min.Y + 260,
+		c.Rect.Min.Y + 370,
+		c.Rect.Min.Y + 480,
 	}
 
 	c.Dials = make([]*Dial, 8)
@@ -95,7 +103,7 @@ func (c *Controls) Compose() {
 		// Labels
 		str := c.Buttons[i].Label
 		strX := c.Buttons[i].Rect.Min.X + (c.Buttons[i].W / 2) - (c.Typ.Txt.BoundsOf(str).W() / 2)
-		strY := c.Buttons[i].Rect.Min.Y + (c.Buttons[i].H / 2) - (c.Typ.Txt.BoundsOf(str).H() / 2)
+		strY := c.Buttons[i].Rect.Min.Y + (c.Buttons[i].H / 2) - (c.Typ.Txt.BoundsOf(str).H() / 3)
 		c.Typ.DrawTextToBatch(str, pixel.V(strX, strY), c.Typ.TxtBatch, c.Typ.Txt)
 	}
 
@@ -150,8 +158,10 @@ func (c *Controls) RespondToInput(win *pixelgl.Window) {
 					Label: c.Buttons[i].Label,
 					Value: 1.0,
 				}
+				if c.Buttons[i].Label == "reset" {
+					c.ResetDials()
+				}
 				c.Send(ctrlSignal)
-				c.ResetDials()
 				c.Compose()
 			}
 		}

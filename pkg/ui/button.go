@@ -37,7 +37,7 @@ func (b *Button) Compose() {
 
 	b.Imd.Clear()
 
-	b.Imd.Color = color.RGBA{0x42, 0x42, 0x42, 0xff}
+	b.Imd.Color = color.RGBA{0x00, 0x00, 0x00, 0xff}
 	b.Imd.Push(b.Rect.Min, b.Rect.Max)
 	b.Imd.Rectangle(1)
 }

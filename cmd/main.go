@@ -12,8 +12,8 @@ import (
 
 var (
 	windowRect   pixel.Rect = pixel.R(0, 0, 1200, 900)
+	graphRect    pixel.Rect = pixel.R(40.01, 20.01, 980, 880)
 	controlsRect pixel.Rect = pixel.R(1000, 0, 1200, 900)
-	graphRect    pixel.Rect = pixel.R(20.01, 20.01, 980, 880)
 )
 
 func main() {
@@ -60,12 +60,13 @@ func run() {
 
 		c.RespondToInput(win)
 		c.DrawTo(imdBatch)
-		c.Typ.TxtBatch.Draw(win)
 
 		g.RespondToInput(win)
 		g.DrawTo(imdBatch)
 
 		imdBatch.Draw(win)
+		c.Typ.TxtBatch.Draw(win)
+		g.Typ.TxtBatch.Draw(win)
 
 		win.Update()
 	}

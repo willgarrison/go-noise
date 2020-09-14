@@ -32,10 +32,12 @@ type Graph struct {
 	BeatIndex      uint8
 	NotesOn        []uint8
 	Scale          []uint8
+	NoteNames      []string
 	MidiWriter     *writer.Writer
 	MidiOutput     midi.Out
 	Playhead       *Playhead
-	ShouldReset    bool
+	Typ            *Typography
+	IsPlaying      bool
 	SignalReceived bool
 	Frequency      float32
 	Lacunarity     float32
@@ -64,7 +66,7 @@ func NewGraph(r pixel.Rect, ao midi.Out) *Graph {
 
 	g.Reset()
 
-	g.SetScale(0)
+	g.SetScale(1)
 
 	g.MidiWriter = writer.New(ao)
 	g.MidiWriter.SetChannel(1)
@@ -74,6 +76,8 @@ func NewGraph(r pixel.Rect, ao midi.Out) *Graph {
 
 	g.BeatChannel = make(chan signals.BeatSignal)
 	g.ListenToBeatChannel()
+
+	g.Typ = NewTypography()
 
 	return g
 }
@@ -164,6 +168,7 @@ func (g *Graph) Compose() {
 	}
 
 	for y := 0; y <= len(g.Matrix[0]); y++ {
+
 		// Horizontal Lines
 		g.Imd.Color = color.RGBA{0xff, 0xff, 0xff, 0xff}
 		g.Imd.Push(
@@ -177,6 +182,17 @@ func (g *Graph) Compose() {
 			),
 		)
 		g.Imd.Line(1)
+	}
+
+	g.Typ.TxtBatch.Clear()
+
+	for y := 0; y < len(g.Matrix[0]); y++ {
+
+		// Notes
+		str := g.NoteNames[g.Scale[y]%12]
+		strX := g.Rect.Min.X - (g.Typ.Txt.BoundsOf(str).W() + 10)
+		strY := g.Rect.Min.Y + (float64(y) * blockHeight) + (blockHeight / 2) - (g.Typ.Txt.BoundsOf(str).H() / 3)
+		g.Typ.DrawTextToBatch(str, pixel.V(strX, strY), g.Typ.TxtBatch, g.Typ.Txt)
 	}
 }
 
@@ -232,6 +248,20 @@ func (g *Graph) ListenToCtrlChannel() {
 				switch ctrlSignal.Label {
 				case "reset":
 					g.Reset()
+				case "major":
+					g.SetScale(0)
+				case "natural":
+					g.SetScale(1)
+				case "harmonic":
+					g.SetScale(2)
+				case "melodic":
+					g.SetScale(3)
+				case "pentatonic":
+					g.SetScale(4)
+				case "play":
+					g.Play()
+				case "stop":
+					g.Stop()
 				case "frequency":
 					g.Frequency = float32(ctrlSignal.Value)
 				case "lacunarity":
@@ -259,15 +289,17 @@ func (g *Graph) ListenToBeatChannel() {
 		for {
 			select {
 			case beatSignal := <-g.BeatChannel:
-				g.BeatIndex = beatSignal.Value % uint8(len(g.Matrix))
-				g.Stop()
-				for y, val := range g.Matrix[g.BeatIndex] {
-					if val == 1 {
-						g.NotesOn = append(g.NotesOn, uint8(g.Scale[y]+(12*2)))
+				if g.IsPlaying {
+					g.BeatIndex = beatSignal.Value % uint8(len(g.Matrix))
+					g.StopNotes()
+					for y, val := range g.Matrix[g.BeatIndex] {
+						if val == 1 {
+							g.NotesOn = append(g.NotesOn, uint8(g.Scale[y]+(12*2)))
+						}
 					}
+					g.SetPlayheadPosition()
+					g.PlayNotes()
 				}
-				g.SetPlayheadPosition()
-				g.Play()
 			}
 		}
 	}()
@@ -276,8 +308,10 @@ func (g *Graph) ListenToBeatChannel() {
 // SetScale ...
 func (g *Graph) SetScale(scaleIndex int) {
 
-	// C	Db	D		Eb	E		F		F#	G		Ab	A		Bb	B
-	// 0	1		2		3		4		5		6		7		8		9		10	11
+	g.NoteNames = []string{"C", "Db", "D", "Eb", "E", "F", "F#", "G", "Ab", "A", "Bb", "B"}
+
+	// C   Db  D   Eb  E   F   F#  G   Ab  A   Bb   B
+	// 0   1   2   3   4   5   6   7   8   9   10   11
 	scales := [][]uint8{
 		{0, 2, 4, 5, 7, 9, 11}, // Major
 		{0, 2, 3, 5, 7, 8, 10}, // Natural minor	C, D, Eb, F, G, Ab, Bb
@@ -287,7 +321,8 @@ func (g *Graph) SetScale(scaleIndex int) {
 	}
 
 	realScaleIndex := scaleIndex % len(scales)
-	fmt.Println(realScaleIndex)
+
+	fmt.Println("realScaleIndex:", realScaleIndex)
 
 	g.Scale = []uint8{}
 	for i := 0; i < 12; i++ {
@@ -304,17 +339,27 @@ func (g *Graph) SetPlayheadPosition() {
 	g.Playhead.Compose()
 }
 
-// Play ...
-func (g *Graph) Play() {
+// PlayNotes ...
+func (g *Graph) PlayNotes() {
 	for _, n := range g.NotesOn {
 		writer.NoteOn(g.MidiWriter, n, 100)
 	}
 }
 
-// Stop ...
-func (g *Graph) Stop() {
+// StopNotes ...
+func (g *Graph) StopNotes() {
 	for _, n := range g.NotesOn {
 		writer.NoteOff(g.MidiWriter, n)
 	}
 	g.NotesOn = g.NotesOn[:0] // Keep allocated memory: To keep the underlying array, slice the slice to zero length
+}
+
+// Play ...
+func (g *Graph) Play() {
+	g.IsPlaying = true
+}
+
+// Stop ...
+func (g *Graph) Stop() {
+	g.IsPlaying = false
 }

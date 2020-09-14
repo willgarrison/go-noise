@@ -35,7 +35,7 @@ func New() (*Midi, error) {
 	}
 
 	// Create and set output to new virtual out
-	// m.Output, err = m.Driver.OpenVirtualOut("test-virtual-out")
+	// m.Output, err = m.Driver.OpenVirtualOut("noise-virtual-out")
 	// if err != nil {
 	// 	return nil, err
 	// }
