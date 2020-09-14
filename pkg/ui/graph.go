@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"fmt"
 	"image/color"
 	"math"
 
@@ -63,23 +64,7 @@ func NewGraph(r pixel.Rect, ao midi.Out) *Graph {
 
 	g.Reset()
 
-	// C	Db	D		Eb	E		F		F#	G		Ab	A		Bb	B
-	// 0	1		2		3		4		5		6		7		8		9		10	11
-	scales := [][]uint8{
-		{0, 2, 4, 5, 7, 9, 11}, // Major
-		{0, 2, 3, 5, 7, 8, 10}, // Natural minor	C, D, Eb, F, G, Ab, Bb
-		{0, 2, 3, 5, 7, 8, 11}, // Harmonic minor	C, D, Eb, F, G, Ab, B
-		{0, 2, 3, 5, 7, 9, 11}, // Melodic minor	C, D, Eb, F, G, A, B
-		{0, 2, 4, 7, 9},        // Pentatonic 		C, D, E, G, A, C
-	}
-	scaleIndex := 2
-
-	g.Scale = []uint8{}
-	for i := 0; i < 12; i++ {
-		for n := range scales[scaleIndex] {
-			g.Scale = append(g.Scale, scales[scaleIndex][n]+uint8(12*i))
-		}
-	}
+	g.SetScale(0)
 
 	g.MidiWriter = writer.New(ao)
 	g.MidiWriter.SetChannel(1)
@@ -286,6 +271,30 @@ func (g *Graph) ListenToBeatChannel() {
 			}
 		}
 	}()
+}
+
+// SetScale ...
+func (g *Graph) SetScale(scaleIndex int) {
+
+	// C	Db	D		Eb	E		F		F#	G		Ab	A		Bb	B
+	// 0	1		2		3		4		5		6		7		8		9		10	11
+	scales := [][]uint8{
+		{0, 2, 4, 5, 7, 9, 11}, // Major
+		{0, 2, 3, 5, 7, 8, 10}, // Natural minor	C, D, Eb, F, G, Ab, Bb
+		{0, 2, 3, 5, 7, 8, 11}, // Harmonic minor	C, D, Eb, F, G, Ab, B
+		{0, 2, 3, 5, 7, 9, 11}, // Melodic minor	C, D, Eb, F, G, A, B
+		{0, 2, 4, 7, 9},        // Pentatonic 		C, D, E, G, A, C
+	}
+
+	realScaleIndex := scaleIndex % len(scales)
+	fmt.Println(realScaleIndex)
+
+	g.Scale = []uint8{}
+	for i := 0; i < 12; i++ {
+		for n := range scales[realScaleIndex] {
+			g.Scale = append(g.Scale, scales[realScaleIndex][n]+uint8(12*i))
+		}
+	}
 }
 
 // SetPlayheadPosition ...
