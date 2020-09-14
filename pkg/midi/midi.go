@@ -34,7 +34,13 @@ func New() (*Midi, error) {
 		return nil, err
 	}
 
-	// Set output
+	// Create and set output to new virtual out
+	// m.Output, err = m.Driver.OpenVirtualOut("test-virtual-out")
+	// if err != nil {
+	// 	return nil, err
+	// }
+
+	// Set output to default IAC Driver
 	m.Output = outs[0]
 
 	// Open output for writing
