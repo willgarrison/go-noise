@@ -1,7 +1,6 @@
 package ui
 
 import (
-	"fmt"
 	"image/color"
 	"math"
 
@@ -64,16 +63,22 @@ func NewGraph(r pixel.Rect, ao midi.Out) *Graph {
 
 	g.Reset()
 
-	g.Scale = []uint8{
-		0, 2, 4, 5, 7, 9, 11,
-		12, 14, 16, 17, 19, 21, 23,
-		24, 26, 28, 29, 31, 33, 35,
-		36, 38, 40, 41, 43, 45, 47,
-		48, 50, 52, 53, 55, 57, 59,
-		60, 62, 64, 65, 67, 69, 71,
-		72, 74, 76, 77, 79, 81, 83,
-		84, 86, 88, 89, 91, 93, 95,
-		96, 98, 100, 101, 103, 105, 107,
+	// C	Db	D		Eb	E		F		F#	G		Ab	A		Bb	B
+	// 0	1		2		3		4		5		6		7		8		9		10	11
+	scales := [][]uint8{
+		{0, 2, 4, 5, 7, 9, 11}, // Major
+		{0, 2, 3, 5, 7, 8, 10}, // Natural minor	C, D, Eb, F, G, Ab, Bb
+		{0, 2, 3, 5, 7, 8, 11}, // Harmonic minor	C, D, Eb, F, G, Ab, B
+		{0, 2, 3, 5, 7, 9, 11}, // Melodic minor	C, D, Eb, F, G, A, B
+		{0, 2, 4, 7, 9},        // Pentatonic 		C, D, E, G, A, C
+	}
+	scaleIndex := 2
+
+	g.Scale = []uint8{}
+	for i := 0; i < 12; i++ {
+		for n := range scales[scaleIndex] {
+			g.Scale = append(g.Scale, scales[scaleIndex][n]+uint8(12*i))
+		}
 	}
 
 	g.MidiWriter = writer.New(ao)
@@ -202,7 +207,6 @@ func (g *Graph) RespondToInput(win *pixelgl.Window) {
 	if win.Pressed(pixelgl.MouseButtonLeft) {
 		pos := win.MousePosition()
 		if helpers.PosInBounds(pos, g.Rect) {
-			fmt.Println(pos)
 			x := uint32((pos.X - g.Rect.Min.X) / (g.W / float64(g.XSteps)))
 			y := uint32((pos.Y - g.Rect.Min.Y) / (g.H / float64(g.YSteps)))
 			if g.Matrix[x][y] == 0 {
@@ -216,7 +220,6 @@ func (g *Graph) RespondToInput(win *pixelgl.Window) {
 	if win.Pressed(pixelgl.MouseButtonRight) {
 		pos := win.MousePosition()
 		if helpers.PosInBounds(pos, g.Rect) {
-			fmt.Println(pos)
 			x := uint32((pos.X - g.Rect.Min.X) / (g.W / float64(g.XSteps)))
 			y := uint32((pos.Y - g.Rect.Min.Y) / (g.H / float64(g.YSteps)))
 			for i, point := range g.UserBlocks {
