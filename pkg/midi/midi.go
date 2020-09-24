@@ -29,19 +29,19 @@ func New() (*Midi, error) {
 	m.Driver = drv
 
 	// Get outputs
-	outs, err := drv.Outs()
-	if err != nil {
-		return nil, err
-	}
-
-	// Create and set output to new virtual out
-	// m.Output, err = m.Driver.OpenVirtualOut("noise-virtual-out")
+	// outs, err := drv.Outs()
 	// if err != nil {
 	// 	return nil, err
 	// }
 
+	// Create and set output to new virtual out
+	m.Output, err = m.Driver.OpenVirtualOut("NoiseVirtualOut")
+	if err != nil {
+		return nil, err
+	}
+
 	// Set output to default IAC Driver
-	m.Output = outs[0]
+	// m.Output = outs[0]
 
 	// Open output for writing
 	err = m.Output.Open()
