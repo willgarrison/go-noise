@@ -11,38 +11,41 @@ import (
 
 // Dial is an interactive UI element
 type Dial struct {
-	Imd                              *imdraw.IMDraw
-	Rect                             pixel.Rect
-	W, H                             float64
-	Label                            string
-	Value, min, max, scale, newValue float64
-	center                           pixel.Vec
-	indicatorLength                  float64
-	indicatorDegree                  float64
-	indicatorLineWidth               float64
-	initialMousePosition             pixel.Vec
-	mouseInteraction                 bool
-	IsUnread                         bool
+	ImdStatic            *imdraw.IMDraw
+	Imd                  *imdraw.IMDraw
+	Rect                 pixel.Rect
+	Radius               float64
+	Label                string
+	Value                float64
+	ValueFrmt            string
+	min                  float64
+	max                  float64
+	scale                float64
+	newValue             float64
+	center               pixel.Vec
+	oneStepDistance      float64
+	initialMousePosition pixel.Vec
+	mouseInteraction     bool
+	IsUnread             bool
 }
 
 // NewDial creates and returns a pointer to a Dial
-func NewDial(label string, r pixel.Rect, value, min, max, scale float64) *Dial {
+func NewDial(label string, valueFrmt string, r pixel.Rect, value, min, max, scale float64) *Dial {
 
 	d := &Dial{
-		Imd:                imdraw.New(nil),
-		Rect:               r,
-		W:                  r.W(),
-		H:                  r.H(),
-		Label:              label,
-		Value:              value,
-		newValue:           value,
-		min:                min,
-		max:                max,
-		scale:              scale,
-		center:             r.Center(),
-		indicatorLength:    r.W() / 2.5,
-		indicatorDegree:    (math.Pi * 2) / max,
-		indicatorLineWidth: 3,
+		ImdStatic:       imdraw.New(nil),
+		Imd:             imdraw.New(nil),
+		Rect:            r,
+		Radius:          r.W() / 2,
+		Label:           label,
+		Value:           value,
+		ValueFrmt:       valueFrmt,
+		newValue:        value,
+		min:             min,
+		max:             max,
+		scale:           scale,
+		center:          r.Center(),
+		oneStepDistance: (math.Pi * 2) / max,
 	}
 
 	d.Compose()
@@ -53,23 +56,47 @@ func NewDial(label string, r pixel.Rect, value, min, max, scale float64) *Dial {
 // Compose ...
 func (d *Dial) Compose() {
 
-	d.Imd.Clear()
+	d.ImdStatic.Clear()
 
 	// Background
-	d.Imd.Color = color.RGBA{0xd0, 0xd0, 0xd0, 0xff}
-	d.Imd.Push(d.center)
-	d.Imd.Circle(d.W/2, 0)
+	d.ImdStatic.Color = color.RGBA{0xd0, 0xd0, 0xd0, 0xff}
+	d.ImdStatic.Push(d.center)
+	d.ImdStatic.Circle(d.Radius, 0)
+
+	// Foreground
+	d.ImdStatic.Color = color.RGBA{0xff, 0xff, 0xff, 0xff}
+	d.ImdStatic.Push(d.center)
+	d.ImdStatic.Circle(d.Radius-10, 0)
+
+	d.Update()
+}
+
+// Update ...
+func (d *Dial) Update() {
+
+	xOffset := math.Sin(d.oneStepDistance * d.Value)
+	yOffset := math.Cos(d.oneStepDistance * d.Value)
 
 	// Indicator line
-	d.Imd.Color = color.RGBA{0xff, 0xff, 0xff, 0xff}
+	d.Imd.Clear()
+	d.Imd.Color = color.RGBA{0x42, 0x42, 0x42, 0xff}
 	d.Imd.Push(
-		d.center,
 		pixel.V(
-			d.center.X-d.indicatorLength*math.Sin(d.indicatorDegree*d.Value),
-			d.center.Y-d.indicatorLength*math.Cos(d.indicatorDegree*d.Value),
+			d.center.X-(d.Radius-10)*xOffset,
+			d.center.Y-(d.Radius-10)*yOffset,
+		),
+		pixel.V(
+			d.center.X-d.Radius*xOffset,
+			d.center.Y-d.Radius*yOffset,
 		),
 	)
-	d.Imd.Line(d.indicatorLineWidth)
+	d.Imd.Line(3)
+}
+
+// DrawTo ...
+func (d *Dial) DrawTo(imd *imdraw.IMDraw) {
+	d.ImdStatic.Draw(imd)
+	d.Imd.Draw(imd)
 }
 
 // JustPressed ...
@@ -101,7 +128,7 @@ func (d *Dial) Pressed(pos pixel.Vec) {
 			d.Value = helpers.Constrain(d.newValue, d.min, d.max)
 			d.newValue = d.Value
 			d.IsUnread = true
-			d.Compose()
+			d.Update()
 		}
 	}
 }

@@ -1,7 +1,6 @@
 package ui
 
 import (
-	"fmt"
 	"image/color"
 	"math"
 
@@ -103,18 +102,18 @@ func (g *Graph) Compose() {
 		g.Matrix[i] = make([]uint32, int(g.YSteps))
 	}
 
-	for _, point := range g.UserBlocks {
-		if int(point.x) < len(g.Matrix) && int(point.y) < len(g.Matrix[0]) {
-			g.Matrix[point.x][point.y] = 1
-		}
-	}
-
 	xPos := uint32(0)
 	for xPos < g.XSteps {
 		val := simplexnoise.Fbm(float32(xPos+g.Offset), 0, g.Frequency, g.Lacunarity, g.Gain, int(g.Octaves))
 		yPos := uint32(math.Round(helpers.ReRange(float64(val), -1, 1, 0, float64(g.YSteps-1))))
 		g.Matrix[xPos][yPos] = 1
 		xPos++
+	}
+
+	for _, point := range g.UserBlocks {
+		if int(point.x) < len(g.Matrix) && int(point.y) < len(g.Matrix[0]) {
+			g.Matrix[point.x][point.y] = 2
+		}
 	}
 
 	g.Imd.Clear()
@@ -129,13 +128,18 @@ func (g *Graph) Compose() {
 
 	blockWidth := g.W / float64(g.XSteps)
 	blockHeight := g.H / float64(g.YSteps)
-
 	for x := range g.Matrix {
 		for y := range g.Matrix[x] {
-
 			// Draw active blocks
-			if g.Matrix[x][y] == 1 {
-				g.Imd.Color = color.RGBA{0x00, 0x00, 0x00, 0xff}
+			if g.Matrix[x][y] > 0 {
+
+				blockColor := color.RGBA{0x00, 0x00, 0x00, 0xff}
+
+				if g.Matrix[x][y] == 2 { // User block
+					blockColor = color.RGBA{0x36, 0xaf, 0xcf, 0xff}
+				}
+
+				g.Imd.Color = blockColor
 				g.Imd.Push(
 					pixel.V(
 						g.Rect.Min.X+(float64(x)*blockWidth),
@@ -168,7 +172,6 @@ func (g *Graph) Compose() {
 	}
 
 	for y := 0; y <= len(g.Matrix[0]); y++ {
-
 		// Horizontal Lines
 		g.Imd.Color = color.RGBA{0xff, 0xff, 0xff, 0xff}
 		g.Imd.Push(
@@ -187,12 +190,11 @@ func (g *Graph) Compose() {
 	g.Typ.TxtBatch.Clear()
 
 	for y := 0; y < len(g.Matrix[0]); y++ {
-
-		// Notes
+		// Note Names
 		str := g.NoteNames[g.Scale[y]%12]
 		strX := g.Rect.Min.X - (g.Typ.Txt.BoundsOf(str).W() + 10)
 		strY := g.Rect.Min.Y + (float64(y) * blockHeight) + (blockHeight / 2) - (g.Typ.Txt.BoundsOf(str).H() / 3)
-		g.Typ.DrawTextToBatch(str, pixel.V(strX, strY), g.Typ.TxtBatch, g.Typ.Txt)
+		g.Typ.DrawTextToBatch(str, pixel.V(strX, strY), color.RGBA{0x00, 0x00, 0x00, 0xff}, g.Typ.TxtBatch, g.Typ.Txt)
 	}
 }
 
@@ -262,19 +264,19 @@ func (g *Graph) ListenToCtrlChannel() {
 					g.Play()
 				case "stop":
 					g.Stop()
-				case "frequency":
+				case "freq":
 					g.Frequency = float32(ctrlSignal.Value)
-				case "lacunarity":
+				case "space":
 					g.Lacunarity = float32(ctrlSignal.Value)
 				case "gain":
 					g.Gain = float32(ctrlSignal.Value)
-				case "octaves":
+				case "octs":
 					g.Octaves = uint8(ctrlSignal.Value)
-				case "xSteps":
+				case "x":
 					g.XSteps = uint32(ctrlSignal.Value)
-				case "ySteps":
+				case "y":
 					g.YSteps = uint32(ctrlSignal.Value)
-				case "offset":
+				case "pos":
 					g.Offset = uint32(ctrlSignal.Value)
 				}
 				g.SignalReceived = true
@@ -290,15 +292,15 @@ func (g *Graph) ListenToBeatChannel() {
 			select {
 			case beatSignal := <-g.BeatChannel:
 				if g.IsPlaying {
-					g.BeatIndex = beatSignal.Value % uint8(len(g.Matrix))
-					g.StopNotes()
+					g.TurnNotesOff()
 					for y, val := range g.Matrix[g.BeatIndex] {
-						if val == 1 {
+						if val > 0 {
 							g.NotesOn = append(g.NotesOn, uint8(g.Scale[y]+(12*2)))
 						}
 					}
 					g.SetPlayheadPosition()
-					g.PlayNotes()
+					g.TurnNotesOn()
+					g.BeatIndex = (g.BeatIndex + beatSignal.Value) % uint8(len(g.Matrix))
 				}
 			}
 		}
@@ -322,8 +324,6 @@ func (g *Graph) SetScale(scaleIndex int) {
 
 	realScaleIndex := scaleIndex % len(scales)
 
-	fmt.Println("realScaleIndex:", realScaleIndex)
-
 	g.Scale = []uint8{}
 	for i := 0; i < 12; i++ {
 		for n := range scales[realScaleIndex] {
@@ -339,15 +339,15 @@ func (g *Graph) SetPlayheadPosition() {
 	g.Playhead.Compose()
 }
 
-// PlayNotes ...
-func (g *Graph) PlayNotes() {
+// TurnNotesOn ...
+func (g *Graph) TurnNotesOn() {
 	for _, n := range g.NotesOn {
 		writer.NoteOn(g.MidiWriter, n, 100)
 	}
 }
 
-// StopNotes ...
-func (g *Graph) StopNotes() {
+// TurnNotesOff ...
+func (g *Graph) TurnNotesOff() {
 	for _, n := range g.NotesOn {
 		writer.NoteOff(g.MidiWriter, n)
 	}
@@ -362,4 +362,6 @@ func (g *Graph) Play() {
 // Stop ...
 func (g *Graph) Stop() {
 	g.IsPlaying = false
+	g.BeatIndex = 0
+	g.SetPlayheadPosition()
 }

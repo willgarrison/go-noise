@@ -54,12 +54,11 @@ func (m *Metronome) Start() {
 		for {
 			select {
 			case <-m.Ticker.C:
+				m.BeatSignal.Value = 1
 				// Send the beat to all BeatChannels
 				for index := range m.BeatChannels {
 					m.BeatChannels[index] <- m.BeatSignal
 				}
-				// Increment the beat
-				m.BeatSignal.Value++
 			}
 		}
 	}()

@@ -35,9 +35,9 @@ func NewTypography() *Typography {
 }
 
 // DrawTextToBatch ...
-func (typ *Typography) DrawTextToBatch(s string, vec pixel.Vec, txtBatch *pixel.Batch, txt *text.Text) {
+func (typ *Typography) DrawTextToBatch(s string, vec pixel.Vec, clr color.Color, txtBatch *pixel.Batch, txt *text.Text) {
 	txt.Clear()
-	txt.Color = color.RGBA{0x00, 0x00, 0x00, 0xff}
+	txt.Color = clr
 	txt.Dot = vec
 	txt.WriteString(s)
 	txt.Draw(txtBatch, pixel.IM)

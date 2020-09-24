@@ -76,14 +76,14 @@ func (c *Controls) ResetDials() {
 	}
 
 	c.Dials = make([]*Dial, 8)
-	c.Dials[0] = NewDial("frequency", pixel.R(columnPos[0], rowPos[0], columnPos[0]+dWidth, rowPos[0]+dHeight), 0.3, 0.01, 3.0, 0.001)
-	c.Dials[1] = NewDial("lacunarity", pixel.R(columnPos[1], rowPos[0], columnPos[1]+dWidth, rowPos[0]+dHeight), 0.9, 0.01, 3.0, 0.01)
-	c.Dials[2] = NewDial("gain", pixel.R(columnPos[0], rowPos[1], columnPos[0]+dWidth, rowPos[1]+dHeight), 2.0, 0.01, 3.0, 0.1)
-	c.Dials[3] = NewDial("octaves", pixel.R(columnPos[1], rowPos[1], columnPos[1]+dWidth, rowPos[1]+dHeight), 5, 1, 10, 1)
-	c.Dials[4] = NewDial("xSteps", pixel.R(columnPos[0], rowPos[2], columnPos[0]+dWidth, rowPos[2]+dHeight), 8, 4, 64, 1)
-	c.Dials[5] = NewDial("ySteps", pixel.R(columnPos[1], rowPos[2], columnPos[1]+dWidth, rowPos[2]+dHeight), 24, 4, 48, 1)
-	c.Dials[6] = NewDial("offset", pixel.R(columnPos[0], rowPos[3], columnPos[0]+dWidth, rowPos[3]+dHeight), 500, 0, 1000, 1)
-	c.Dials[7] = NewDial("bpm", pixel.R(columnPos[1], rowPos[3], columnPos[1]+dWidth, rowPos[3]+dHeight), 120, 1, 960, 1)
+	c.Dials[0] = NewDial("freq", "%.3f", pixel.R(columnPos[0], rowPos[0], columnPos[0]+dWidth, rowPos[0]+dHeight), 0.3, 0.01, 3.0, 0.001)
+	c.Dials[1] = NewDial("space", "%.2f", pixel.R(columnPos[1], rowPos[0], columnPos[1]+dWidth, rowPos[0]+dHeight), 0.9, 0.01, 3.0, 0.01)
+	c.Dials[2] = NewDial("gain", "%.1f", pixel.R(columnPos[0], rowPos[1], columnPos[0]+dWidth, rowPos[1]+dHeight), 2.0, 0.01, 3.0, 0.1)
+	c.Dials[3] = NewDial("octs", "%.f", pixel.R(columnPos[1], rowPos[1], columnPos[1]+dWidth, rowPos[1]+dHeight), 5, 1, 10, 1)
+	c.Dials[4] = NewDial("x", "%.f", pixel.R(columnPos[0], rowPos[2], columnPos[0]+dWidth, rowPos[2]+dHeight), 8, 4, 64, 1)
+	c.Dials[5] = NewDial("y", "%.f", pixel.R(columnPos[1], rowPos[2], columnPos[1]+dWidth, rowPos[2]+dHeight), 24, 4, 48, 1)
+	c.Dials[6] = NewDial("pos", "%.f", pixel.R(columnPos[0], rowPos[3], columnPos[0]+dWidth, rowPos[3]+dHeight), 500, 0, 1000, 1)
+	c.Dials[7] = NewDial("bpm", "%.f", pixel.R(columnPos[1], rowPos[3], columnPos[1]+dWidth, rowPos[3]+dHeight), 120, 1, 960, 1)
 }
 
 // Compose ...
@@ -104,22 +104,22 @@ func (c *Controls) Compose() {
 		str := c.Buttons[i].Label
 		strX := c.Buttons[i].Rect.Min.X + (c.Buttons[i].W / 2) - (c.Typ.Txt.BoundsOf(str).W() / 2)
 		strY := c.Buttons[i].Rect.Min.Y + (c.Buttons[i].H / 2) - (c.Typ.Txt.BoundsOf(str).H() / 3)
-		c.Typ.DrawTextToBatch(str, pixel.V(strX, strY), c.Typ.TxtBatch, c.Typ.Txt)
+		c.Typ.DrawTextToBatch(str, pixel.V(strX, strY), color.RGBA{0x00, 0x00, 0x00, 0xff}, c.Typ.TxtBatch, c.Typ.Txt)
 	}
 
 	for i := range c.Dials {
 
-		// Labels
-		str := c.Dials[i].Label
-		strX := c.Dials[i].center.X - (c.Typ.Txt.BoundsOf(str).W() / 2)
-		strY := c.Dials[i].Rect.Min.Y - 20
-		c.Typ.DrawTextToBatch(str, pixel.V(strX, strY), c.Typ.TxtBatch, c.Typ.Txt)
-
 		// Values
-		str = fmt.Sprintf("%.3f", c.Dials[i].Value)
+		str := fmt.Sprintf(c.Dials[i].ValueFrmt, c.Dials[i].Value)
+		strX := c.Dials[i].center.X - (c.Typ.Txt.BoundsOf(str).W() / 2)
+		strY := c.Dials[i].center.Y - (c.Typ.Txt.BoundsOf(str).H() / 3) + 5
+		c.Typ.DrawTextToBatch(str, pixel.V(strX, strY), color.RGBA{0x00, 0x00, 0x00, 0xff}, c.Typ.TxtBatch, c.Typ.Txt)
+
+		// Labels
+		str = c.Dials[i].Label
 		strX = c.Dials[i].center.X - (c.Typ.Txt.BoundsOf(str).W() / 2)
-		strY = c.Dials[i].Rect.Min.Y - 10
-		c.Typ.DrawTextToBatch(str, pixel.V(strX, strY), c.Typ.TxtBatch, c.Typ.Txt)
+		strY = c.Dials[i].center.Y - (c.Typ.Txt.BoundsOf(str).H() / 3) - 10
+		c.Typ.DrawTextToBatch(str, pixel.V(strX, strY), color.RGBA{0x42, 0x42, 0x42, 0xff}, c.Typ.TxtBatch, c.Typ.Txt)
 	}
 }
 
@@ -135,7 +135,7 @@ func (c *Controls) DrawTo(imd *imdraw.IMDraw) {
 		c.Buttons[i].Imd.Draw(c.ImdBatch)
 	}
 	for i := range c.Dials {
-		c.Dials[i].Imd.Draw(c.ImdBatch)
+		c.Dials[i].DrawTo(c.ImdBatch)
 	}
 
 	// Draw batch
