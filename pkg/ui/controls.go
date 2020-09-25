@@ -16,6 +16,7 @@ type Controls struct {
 	W, H         float64
 	Dials        []*Dial
 	Buttons      []*Button
+	ModeButtons  []*Button
 	Imd          *imdraw.IMDraw
 	ImdBatch     *imdraw.IMDraw
 	Typ          *Typography
@@ -47,14 +48,23 @@ func (c *Controls) ResetButtons() {
 
 	c.Buttons = []*Button{
 		NewButton("reset", pixel.R(c.Rect.Min.X+20, c.Rect.Min.Y+20, c.Rect.Max.X-20, c.Rect.Min.Y+90)),
+		NewButton("play", pixel.R(c.Rect.Min.X+20, c.Rect.Min.Y+800.01, c.Rect.Min.X+95, c.Rect.Min.Y+860.01)),
+		NewButton("stop", pixel.R(c.Rect.Min.X+105, c.Rect.Min.Y+800.01, c.Rect.Min.X+180, c.Rect.Min.Y+860.01)),
+	}
+
+	c.ModeButtons = []*Button{
 		NewButton("major", pixel.R(c.Rect.Min.X+20, c.Rect.Min.Y+580.01, c.Rect.Max.X-20, c.Rect.Min.Y+610.01)),
 		NewButton("natural", pixel.R(c.Rect.Min.X+20, c.Rect.Min.Y+620.01, c.Rect.Max.X-20, c.Rect.Min.Y+650.01)),
 		NewButton("harmonic", pixel.R(c.Rect.Min.X+20, c.Rect.Min.Y+660.01, c.Rect.Max.X-20, c.Rect.Min.Y+690.01)),
 		NewButton("melodic", pixel.R(c.Rect.Min.X+20, c.Rect.Min.Y+700.01, c.Rect.Max.X-20, c.Rect.Min.Y+730.01)),
 		NewButton("pentatonic", pixel.R(c.Rect.Min.X+20, c.Rect.Min.Y+740.01, c.Rect.Max.X-20, c.Rect.Min.Y+770.01)),
-		NewButton("play", pixel.R(c.Rect.Min.X+20, c.Rect.Min.Y+800.01, c.Rect.Min.X+95, c.Rect.Min.Y+860.01)),
-		NewButton("stop", pixel.R(c.Rect.Min.X+105, c.Rect.Min.Y+800.01, c.Rect.Min.X+180, c.Rect.Min.Y+860.01)),
 	}
+
+	for i := range c.ModeButtons {
+		c.ModeButtons[i].SetGrouped(true)
+	}
+
+	c.ModeButtons[0].SetActive(true)
 }
 
 // ResetDials ..
@@ -107,6 +117,15 @@ func (c *Controls) Compose() {
 		c.Typ.DrawTextToBatch(str, pixel.V(strX, strY), color.RGBA{0x00, 0x00, 0x00, 0xff}, c.Typ.TxtBatch, c.Typ.Txt)
 	}
 
+	for i := range c.ModeButtons {
+
+		// Labels
+		str := c.ModeButtons[i].Label
+		strX := c.ModeButtons[i].Rect.Min.X + (c.ModeButtons[i].W / 2) - (c.Typ.Txt.BoundsOf(str).W() / 2)
+		strY := c.ModeButtons[i].Rect.Min.Y + (c.ModeButtons[i].H / 2) - (c.Typ.Txt.BoundsOf(str).H() / 3)
+		c.Typ.DrawTextToBatch(str, pixel.V(strX, strY), color.RGBA{0x00, 0x00, 0x00, 0xff}, c.Typ.TxtBatch, c.Typ.Txt)
+	}
+
 	for i := range c.Dials {
 
 		// Values
@@ -133,6 +152,9 @@ func (c *Controls) DrawTo(imd *imdraw.IMDraw) {
 	c.ImdBatch.Clear()
 	for i := range c.Buttons {
 		c.Buttons[i].Imd.Draw(c.ImdBatch)
+	}
+	for i := range c.ModeButtons {
+		c.ModeButtons[i].Imd.Draw(c.ImdBatch)
 	}
 	for i := range c.Dials {
 		c.Dials[i].DrawTo(c.ImdBatch)
@@ -164,6 +186,31 @@ func (c *Controls) RespondToInput(win *pixelgl.Window) {
 				c.Send(ctrlSignal)
 				c.Compose()
 			}
+		}
+
+		// ModeButtons
+		// Check if a modeButton was pressed
+		modeButtonPressedIndex := -1
+		for i := range c.ModeButtons {
+			if c.ModeButtons[i].JustPressed(pos) {
+				modeButtonPressedIndex = i
+			}
+		}
+		// If a modeButton was pressed
+		if modeButtonPressedIndex > -1 {
+			// Deactivate all mode buttons
+			for i := range c.ModeButtons {
+				c.ModeButtons[i].SetActive(false)
+			}
+			// Activate the pressed mode button
+			c.ModeButtons[modeButtonPressedIndex].SetActive(true)
+			// Send signal
+			ctrlSignal := signals.CtrlSignal{
+				Label: c.ModeButtons[modeButtonPressedIndex].Label,
+				Value: 1.0,
+			}
+			c.Send(ctrlSignal)
+			c.Compose()
 		}
 
 		// Dails

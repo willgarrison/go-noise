@@ -65,7 +65,7 @@ func NewGraph(r pixel.Rect, ao midi.Out) *Graph {
 
 	g.Reset()
 
-	g.SetScale(1)
+	g.SetScale(0)
 
 	g.MidiWriter = writer.New(ao)
 	g.MidiWriter.SetChannel(1)
@@ -293,7 +293,7 @@ func (g *Graph) ListenToBeatChannel() {
 			case beatSignal := <-g.BeatChannel:
 				if g.IsPlaying {
 					g.TurnNotesOff()
-					for y, val := range g.Matrix[g.BeatIndex] {
+					for y, val := range g.Matrix[g.BeatIndex%uint8(len(g.Matrix))] {
 						if val > 0 {
 							g.NotesOn = append(g.NotesOn, uint8(g.Scale[y]+(12*2)))
 						}
