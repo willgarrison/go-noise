@@ -1,7 +1,6 @@
 package ui
 
 import (
-	"fmt"
 	"image/color"
 
 	"github.com/faiface/pixel"
@@ -66,12 +65,10 @@ func (b *Button) JustPressed(pos pixel.Vec) bool {
 func (b *Button) SetGrouped(state bool) {
 	b.Grouped = state
 	b.Compose()
-	fmt.Println("SetGrouped", state)
 }
 
 // SetActive ...
 func (b *Button) SetActive(state bool) {
 	b.Active = state
 	b.Compose()
-	fmt.Println("SetActive", state)
 }
