@@ -46,18 +46,41 @@ func NewControls(r pixel.Rect) *Controls {
 // ResetButtons ..
 func (c *Controls) ResetButtons() {
 
-	c.Buttons = []*Button{
-		NewButton("reset", pixel.R(c.Rect.Min.X+20, c.Rect.Min.Y+20, c.Rect.Max.X-20, c.Rect.Min.Y+90)),
-		NewButton("play", pixel.R(c.Rect.Min.X+20, c.Rect.Min.Y+800.01, c.Rect.Min.X+95, c.Rect.Min.Y+860.01)),
-		NewButton("stop", pixel.R(c.Rect.Min.X+105, c.Rect.Min.Y+800.01, c.Rect.Min.X+180, c.Rect.Min.Y+860.01)),
+	buttonWidths := []float64{
+		75.0,
+		160.0,
+	}
+	buttonHeights := []float64{
+		30.0,
+		60.0,
+	}
+
+	columnPos := []float64{
+		c.Rect.Min.X + 20,
+		c.Rect.Min.X + 105,
+	}
+
+	rowPos := []float64{
+		c.Rect.Min.Y + 580.01,
+		c.Rect.Min.Y + 620.01,
+		c.Rect.Min.Y + 660.01,
+		c.Rect.Min.Y + 700.01,
+		c.Rect.Min.Y + 740.01,
+		c.Rect.Min.Y + 800.01,
 	}
 
 	c.ModeButtons = []*Button{
-		NewButton("major", pixel.R(c.Rect.Min.X+20, c.Rect.Min.Y+580.01, c.Rect.Max.X-20, c.Rect.Min.Y+610.01)),
-		NewButton("natural", pixel.R(c.Rect.Min.X+20, c.Rect.Min.Y+620.01, c.Rect.Max.X-20, c.Rect.Min.Y+650.01)),
-		NewButton("harmonic", pixel.R(c.Rect.Min.X+20, c.Rect.Min.Y+660.01, c.Rect.Max.X-20, c.Rect.Min.Y+690.01)),
-		NewButton("melodic", pixel.R(c.Rect.Min.X+20, c.Rect.Min.Y+700.01, c.Rect.Max.X-20, c.Rect.Min.Y+730.01)),
-		NewButton("pentatonic", pixel.R(c.Rect.Min.X+20, c.Rect.Min.Y+740.01, c.Rect.Max.X-20, c.Rect.Min.Y+770.01)),
+		NewButton("major", pixel.R(columnPos[0], rowPos[0], columnPos[0]+buttonWidths[1], rowPos[0]+buttonHeights[0])),
+		NewButton("natural", pixel.R(columnPos[0], rowPos[1], columnPos[0]+buttonWidths[1], rowPos[1]+buttonHeights[0])),
+		NewButton("harmonic", pixel.R(columnPos[0], rowPos[2], columnPos[0]+buttonWidths[1], rowPos[2]+buttonHeights[0])),
+		NewButton("melodic", pixel.R(columnPos[0], rowPos[3], columnPos[0]+buttonWidths[1], rowPos[3]+buttonHeights[0])),
+		NewButton("pentatonic", pixel.R(columnPos[0], rowPos[4], columnPos[0]+buttonWidths[1], rowPos[4]+buttonHeights[0])),
+	}
+
+	c.Buttons = []*Button{
+		NewButton("reset", pixel.R(columnPos[0], c.Rect.Min.Y+20, c.Rect.Max.X-20, c.Rect.Min.Y+90)),
+		NewButton("play", pixel.R(columnPos[0], rowPos[5], columnPos[0]+buttonWidths[0], rowPos[5]+buttonHeights[1])),
+		NewButton("stop", pixel.R(columnPos[1], rowPos[5], columnPos[1]+buttonWidths[0], rowPos[5]+buttonHeights[1])),
 	}
 
 	for i := range c.ModeButtons {
@@ -70,8 +93,8 @@ func (c *Controls) ResetButtons() {
 // ResetDials ..
 func (c *Controls) ResetDials() {
 
-	dWidth := 70.0
-	dHeight := 70.0
+	dialWidth := 70.0
+	dialHeight := 70.0
 
 	columnPos := []float64{
 		c.Rect.Min.X + 20,
@@ -79,21 +102,21 @@ func (c *Controls) ResetDials() {
 	}
 
 	rowPos := []float64{
-		c.Rect.Min.Y + 150,
-		c.Rect.Min.Y + 260,
-		c.Rect.Min.Y + 370,
-		c.Rect.Min.Y + 480,
+		c.Rect.Min.Y + 130,
+		c.Rect.Min.Y + 230,
+		c.Rect.Min.Y + 330,
+		c.Rect.Min.Y + 430,
 	}
 
 	c.Dials = make([]*Dial, 8)
-	c.Dials[0] = NewDial("freq", "%.3f", pixel.R(columnPos[0], rowPos[0], columnPos[0]+dWidth, rowPos[0]+dHeight), 0.3, 0.01, 3.0, 0.001)
-	c.Dials[1] = NewDial("space", "%.2f", pixel.R(columnPos[1], rowPos[0], columnPos[1]+dWidth, rowPos[0]+dHeight), 0.9, 0.01, 3.0, 0.01)
-	c.Dials[2] = NewDial("gain", "%.1f", pixel.R(columnPos[0], rowPos[1], columnPos[0]+dWidth, rowPos[1]+dHeight), 2.0, 0.01, 3.0, 0.1)
-	c.Dials[3] = NewDial("octs", "%.f", pixel.R(columnPos[1], rowPos[1], columnPos[1]+dWidth, rowPos[1]+dHeight), 5, 1, 10, 1)
-	c.Dials[4] = NewDial("x", "%.f", pixel.R(columnPos[0], rowPos[2], columnPos[0]+dWidth, rowPos[2]+dHeight), 8, 4, 64, 1)
-	c.Dials[5] = NewDial("y", "%.f", pixel.R(columnPos[1], rowPos[2], columnPos[1]+dWidth, rowPos[2]+dHeight), 24, 4, 48, 1)
-	c.Dials[6] = NewDial("pos", "%.f", pixel.R(columnPos[0], rowPos[3], columnPos[0]+dWidth, rowPos[3]+dHeight), 500, 0, 1000, 1)
-	c.Dials[7] = NewDial("bpm", "%.f", pixel.R(columnPos[1], rowPos[3], columnPos[1]+dWidth, rowPos[3]+dHeight), 120, 1, 960, 1)
+	c.Dials[0] = NewDial("freq", "%.3f", pixel.R(columnPos[0], rowPos[0], columnPos[0]+dialWidth, rowPos[0]+dialHeight), 0.3, 0.01, 3.0, 0.001)
+	c.Dials[1] = NewDial("space", "%.2f", pixel.R(columnPos[1], rowPos[0], columnPos[1]+dialWidth, rowPos[0]+dialHeight), 0.9, 0.01, 3.0, 0.01)
+	c.Dials[2] = NewDial("gain", "%.1f", pixel.R(columnPos[0], rowPos[1], columnPos[0]+dialWidth, rowPos[1]+dialHeight), 2.0, 0.01, 3.0, 0.1)
+	c.Dials[3] = NewDial("octs", "%.1f", pixel.R(columnPos[1], rowPos[1], columnPos[1]+dialWidth, rowPos[1]+dialHeight), 5, 1, 10, 1)
+	c.Dials[4] = NewDial("x", "%.1f", pixel.R(columnPos[0], rowPos[2], columnPos[0]+dialWidth, rowPos[2]+dialHeight), 16, 4, 64, 1)
+	c.Dials[5] = NewDial("y", "%.1f", pixel.R(columnPos[1], rowPos[2], columnPos[1]+dialWidth, rowPos[2]+dialHeight), 24, 4, 48, 1)
+	c.Dials[6] = NewDial("pos", "%.1f", pixel.R(columnPos[0], rowPos[3], columnPos[0]+dialWidth, rowPos[3]+dialHeight), 0, 0, 1000, 1)
+	c.Dials[7] = NewDial("bpm", "%.1f", pixel.R(columnPos[1], rowPos[3], columnPos[1]+dialWidth, rowPos[3]+dialHeight), 180, 1, 960, 1)
 }
 
 // Compose ...
@@ -166,6 +189,16 @@ func (c *Controls) DrawTo(imd *imdraw.IMDraw) {
 
 // RespondToInput ...
 func (c *Controls) RespondToInput(win *pixelgl.Window) {
+
+	// Key commands:
+	// Play/Pause with Spacebar
+	if win.JustPressed(pixelgl.KeySpace) {
+		ctrlSignal := signals.CtrlSignal{
+			Label: "toggle",
+			Value: 1.0,
+		}
+		c.Send(ctrlSignal)
+	}
 
 	if win.JustPressed(pixelgl.MouseButtonLeft) {
 

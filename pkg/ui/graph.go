@@ -3,6 +3,7 @@ package ui
 import (
 	"image/color"
 	"math"
+	"strconv"
 
 	"github.com/faiface/pixel"
 	"github.com/faiface/pixel/imdraw"
@@ -13,6 +14,14 @@ import (
 	"gitlab.com/gomidi/midi"
 	"gitlab.com/gomidi/midi/writer"
 )
+
+// Note ...
+type Note struct {
+	index       uint8
+	beatLength  uint8
+	beatsPlayed uint8
+	isPlaying   bool
+}
 
 // Point ...
 type Point struct {
@@ -29,7 +38,8 @@ type Graph struct {
 	CtrlChannel    chan signals.CtrlSignal
 	BeatChannel    chan signals.BeatSignal
 	BeatIndex      uint8
-	NotesOn        []uint8
+	Notes          []Note
+	NotesToStrike  []uint8
 	Scale          []uint8
 	NoteNames      []string
 	MidiWriter     *writer.Writer
@@ -59,6 +69,13 @@ func NewGraph(r pixel.Rect, ao midi.Out) *Graph {
 
 	g.Imd = imdraw.New(nil)
 
+	// Initialize notes
+	g.Notes = make([]Note, 128)
+	for i := range g.Notes {
+		g.Notes[i].index = uint8(i)
+		g.Notes[i].beatLength = 3
+	}
+
 	// Initialize playhead
 	g.Playhead = NewPlayhead(pixel.R(g.Rect.Min.X, g.Rect.Min.Y, g.Rect.Min.X, g.Rect.Max.Y))
 	g.Playhead.Compose()
@@ -87,10 +104,10 @@ func (g *Graph) Reset() {
 	g.Lacunarity = 0.9
 	g.Gain = 2.0
 	g.Octaves = 5
-	g.XSteps = 8
+	g.XSteps = 16
 	g.YSteps = 24
-	g.Offset = 500
-	g.Bpm = 120
+	g.Offset = 0
+	g.Bpm = 180
 }
 
 // Compose ...
@@ -116,7 +133,9 @@ func (g *Graph) Compose() {
 		}
 	}
 
+	// Clear
 	g.Imd.Clear()
+	g.Typ.TxtBatch.Clear()
 
 	// Background
 	g.Imd.Color = color.RGBA{0xee, 0xee, 0xee, 0xff}
@@ -128,13 +147,13 @@ func (g *Graph) Compose() {
 
 	blockWidth := g.W / float64(g.XSteps)
 	blockHeight := g.H / float64(g.YSteps)
+
+	// Draw active blocks
 	for x := range g.Matrix {
 		for y := range g.Matrix[x] {
-			// Draw active blocks
 			if g.Matrix[x][y] > 0 {
 
 				blockColor := color.RGBA{0x00, 0x00, 0x00, 0xff}
-
 				if g.Matrix[x][y] == 2 { // User block
 					blockColor = color.RGBA{0x36, 0xaf, 0xcf, 0xff}
 				}
@@ -155,8 +174,8 @@ func (g *Graph) Compose() {
 		}
 	}
 
+	// Vertical Lines
 	for x := 0; x <= len(g.Matrix); x++ {
-		// Vertical Lines
 		g.Imd.Color = color.RGBA{0xff, 0xff, 0xff, 0xff}
 		g.Imd.Push(
 			pixel.V(
@@ -171,8 +190,8 @@ func (g *Graph) Compose() {
 		g.Imd.Line(1)
 	}
 
+	// Horizontal Lines
 	for y := 0; y <= len(g.Matrix[0]); y++ {
-		// Horizontal Lines
 		g.Imd.Color = color.RGBA{0xff, 0xff, 0xff, 0xff}
 		g.Imd.Push(
 			pixel.V(
@@ -187,10 +206,16 @@ func (g *Graph) Compose() {
 		g.Imd.Line(1)
 	}
 
-	g.Typ.TxtBatch.Clear()
+	// Text: Beats
+	for x := 0; x < len(g.Matrix); x++ {
+		str := strconv.Itoa(x + 1)
+		strX := g.Rect.Min.X + (float64(x) * blockWidth) + (blockWidth / 2) - (g.Typ.Txt.BoundsOf(str).W() / 2)
+		strY := g.Rect.Min.Y - (g.Typ.Txt.BoundsOf(str).H() + 10)
+		g.Typ.DrawTextToBatch(str, pixel.V(strX, strY), color.RGBA{0x00, 0x00, 0x00, 0xff}, g.Typ.TxtBatch, g.Typ.Txt)
+	}
 
+	// Text: Notes
 	for y := 0; y < len(g.Matrix[0]); y++ {
-		// Note Names
 		str := g.NoteNames[g.Scale[y]%12]
 		strX := g.Rect.Min.X - (g.Typ.Txt.BoundsOf(str).W() + 10)
 		strY := g.Rect.Min.Y + (float64(y) * blockHeight) + (blockHeight / 2) - (g.Typ.Txt.BoundsOf(str).H() / 3)
@@ -264,6 +289,8 @@ func (g *Graph) ListenToCtrlChannel() {
 					g.Play()
 				case "stop":
 					g.Stop()
+				case "toggle":
+					g.Toggle()
 				case "freq":
 					g.Frequency = float32(ctrlSignal.Value)
 				case "space":
@@ -295,7 +322,7 @@ func (g *Graph) ListenToBeatChannel() {
 					g.TurnNotesOff()
 					for y, val := range g.Matrix[g.BeatIndex%uint8(len(g.Matrix))] {
 						if val > 0 {
-							g.NotesOn = append(g.NotesOn, uint8(g.Scale[y]+(12*2)))
+							g.NotesToStrike = append(g.NotesToStrike, uint8(g.Scale[y]+(12*2)))
 						}
 					}
 					g.SetPlayheadPosition()
@@ -341,17 +368,36 @@ func (g *Graph) SetPlayheadPosition() {
 
 // TurnNotesOn ...
 func (g *Graph) TurnNotesOn() {
-	for _, n := range g.NotesOn {
-		writer.NoteOn(g.MidiWriter, n, 100)
+	for _, note := range g.NotesToStrike {
+
+		// if already playing, turn off
+		if g.Notes[note].isPlaying {
+			writer.NoteOff(g.MidiWriter, note)
+		}
+
+		// turn on
+		writer.NoteOn(g.MidiWriter, note, 100)
+		g.Notes[note].beatsPlayed = 0
+		g.Notes[note].isPlaying = true
+
+		// Clean up, but keep allocated memory
+		// To keep the underlying array, slice the slice to zero length
+		g.NotesToStrike = g.NotesToStrike[:0]
 	}
 }
 
 // TurnNotesOff ...
 func (g *Graph) TurnNotesOff() {
-	for _, n := range g.NotesOn {
-		writer.NoteOff(g.MidiWriter, n)
+	for i, note := range g.Notes {
+		if note.isPlaying {
+			g.Notes[i].beatsPlayed++
+			if g.Notes[i].beatsPlayed >= note.beatLength {
+				writer.NoteOff(g.MidiWriter, note.index)
+				g.Notes[i].beatsPlayed = 0
+				g.Notes[i].isPlaying = false
+			}
+		}
 	}
-	g.NotesOn = g.NotesOn[:0] // Keep allocated memory: To keep the underlying array, slice the slice to zero length
 }
 
 // Play ...
@@ -364,4 +410,13 @@ func (g *Graph) Stop() {
 	g.IsPlaying = false
 	g.BeatIndex = 0
 	g.SetPlayheadPosition()
+}
+
+// Toggle ...
+func (g *Graph) Toggle() {
+	if g.IsPlaying {
+		g.Stop()
+	} else {
+		g.Play()
+	}
 }

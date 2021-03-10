@@ -34,7 +34,7 @@ func (p *Playhead) Compose() {
 
 	p.Imd.Color = color.RGBA{0xff, 0x42, 0x42, 0xff}
 	p.Imd.Push(
-		p.Rect.Min,
+		pixel.V(p.Rect.Min.X, p.Rect.Min.Y),
 		pixel.V(p.Rect.Min.X, p.Rect.Max.Y),
 	)
 	p.Imd.Line(1)
