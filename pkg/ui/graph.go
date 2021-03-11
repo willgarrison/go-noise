@@ -3,6 +3,7 @@ package ui
 import (
 	"image/color"
 	"math"
+	"math/rand"
 	"strconv"
 
 	"github.com/faiface/pixel"
@@ -33,7 +34,7 @@ type Graph struct {
 	Rect           pixel.Rect
 	W, H           float64
 	Matrix         [][]uint32
-	UserBlocks     []Point
+	UserMatrix     [][]uint32
 	Imd            *imdraw.IMDraw
 	CtrlChannel    chan signals.CtrlSignal
 	BeatChannel    chan signals.BeatSignal
@@ -56,6 +57,7 @@ type Graph struct {
 	YSteps         uint32
 	Offset         uint32
 	Bpm            uint32
+	BeatLength     uint32
 }
 
 // NewGraph ...
@@ -73,7 +75,7 @@ func NewGraph(r pixel.Rect, ao midi.Out) *Graph {
 	g.Notes = make([]Note, 128)
 	for i := range g.Notes {
 		g.Notes[i].index = uint8(i)
-		g.Notes[i].beatLength = 3
+		g.Notes[i].beatLength = uint8(g.BeatLength)
 	}
 
 	// Initialize playhead
@@ -108,6 +110,13 @@ func (g *Graph) Reset() {
 	g.YSteps = 24
 	g.Offset = 0
 	g.Bpm = 180
+	g.BeatLength = 1
+
+	// Initialize UserMatrix
+	g.UserMatrix = make([][]uint32, 64)
+	for i := range g.UserMatrix {
+		g.UserMatrix[i] = make([]uint32, 48)
+	}
 }
 
 // Compose ...
@@ -127,9 +136,17 @@ func (g *Graph) Compose() {
 		xPos++
 	}
 
-	for _, point := range g.UserBlocks {
-		if int(point.x) < len(g.Matrix) && int(point.y) < len(g.Matrix[0]) {
-			g.Matrix[point.x][point.y] = 2
+	// Set beatlength
+	for i := range g.Notes {
+		g.Notes[i].beatLength = uint8(g.BeatLength)
+	}
+
+	// Draw active blocks
+	for x := range g.Matrix {
+		for y := range g.Matrix[x] {
+			if g.UserMatrix[x][y] != 0 {
+				g.Matrix[x][y] = g.UserMatrix[x][y]
+			}
 		}
 	}
 
@@ -153,9 +170,14 @@ func (g *Graph) Compose() {
 		for y := range g.Matrix[x] {
 			if g.Matrix[x][y] > 0 {
 
+				// System block
 				blockColor := color.RGBA{0x00, 0x00, 0x00, 0xff}
-				if g.Matrix[x][y] == 2 { // User block
+
+				// User block
+				if g.Matrix[x][y] == 2 { // On
 					blockColor = color.RGBA{0x36, 0xaf, 0xcf, 0xff}
+				} else if g.Matrix[x][y] == 3 { // Off
+					blockColor = color.RGBA{0x90, 0x90, 0x90, 0xff}
 				}
 
 				g.Imd.Color = blockColor
@@ -232,29 +254,29 @@ func (g *Graph) DrawTo(imd *imdraw.IMDraw) {
 // RespondToInput ...
 func (g *Graph) RespondToInput(win *pixelgl.Window) {
 
-	if win.Pressed(pixelgl.MouseButtonLeft) {
+	if win.JustPressed(pixelgl.MouseButtonLeft) {
 		pos := win.MousePosition()
 		if helpers.PosInBounds(pos, g.Rect) {
 			x := uint32((pos.X - g.Rect.Min.X) / (g.W / float64(g.XSteps)))
 			y := uint32((pos.Y - g.Rect.Min.Y) / (g.H / float64(g.YSteps)))
-			if g.Matrix[x][y] == 0 {
-				// Add
-				g.UserBlocks = append(g.UserBlocks, Point{x, y})
+			if g.UserMatrix[x][y] == 2 {
+				g.UserMatrix[x][y] = 0
+			} else {
+				g.UserMatrix[x][y] = 2
 			}
 			g.Compose()
 		}
 	}
 
-	if win.Pressed(pixelgl.MouseButtonRight) {
+	if win.JustPressed(pixelgl.MouseButtonRight) {
 		pos := win.MousePosition()
 		if helpers.PosInBounds(pos, g.Rect) {
 			x := uint32((pos.X - g.Rect.Min.X) / (g.W / float64(g.XSteps)))
 			y := uint32((pos.Y - g.Rect.Min.Y) / (g.H / float64(g.YSteps)))
-			for i, point := range g.UserBlocks {
-				if point.x == x && point.y == y {
-					// Delete
-					g.UserBlocks = append(g.UserBlocks[:i], g.UserBlocks[i+1:]...)
-				}
+			if g.UserMatrix[x][y] == 3 {
+				g.UserMatrix[x][y] = 0
+			} else {
+				g.UserMatrix[x][y] = 3
 			}
 			g.Compose()
 		}
@@ -305,6 +327,8 @@ func (g *Graph) ListenToCtrlChannel() {
 					g.YSteps = uint32(ctrlSignal.Value)
 				case "pos":
 					g.Offset = uint32(ctrlSignal.Value)
+				case "bl":
+					g.BeatLength = uint32(ctrlSignal.Value)
 				}
 				g.SignalReceived = true
 			}
@@ -319,14 +343,14 @@ func (g *Graph) ListenToBeatChannel() {
 			select {
 			case beatSignal := <-g.BeatChannel:
 				if g.IsPlaying {
-					g.TurnNotesOff()
 					for y, val := range g.Matrix[g.BeatIndex%uint8(len(g.Matrix))] {
-						if val > 0 {
+						if val == 1 || val == 2 {
 							g.NotesToStrike = append(g.NotesToStrike, uint8(g.Scale[y]+(12*2)))
 						}
 					}
-					g.SetPlayheadPosition()
+					g.TurnNotesOff()
 					g.TurnNotesOn()
+					g.SetPlayheadPosition()
 					g.BeatIndex = (g.BeatIndex + beatSignal.Value) % uint8(len(g.Matrix))
 				}
 			}
@@ -369,17 +393,14 @@ func (g *Graph) SetPlayheadPosition() {
 // TurnNotesOn ...
 func (g *Graph) TurnNotesOn() {
 	for _, note := range g.NotesToStrike {
-
-		// if already playing, turn off
+		// If already playing, turn off
 		if g.Notes[note].isPlaying {
 			writer.NoteOff(g.MidiWriter, note)
 		}
-
-		// turn on
-		writer.NoteOn(g.MidiWriter, note, 100)
+		// Turn on
+		writer.NoteOn(g.MidiWriter, note, uint8(rand.Intn(50)+51))
 		g.Notes[note].beatsPlayed = 0
 		g.Notes[note].isPlaying = true
-
 		// Clean up, but keep allocated memory
 		// To keep the underlying array, slice the slice to zero length
 		g.NotesToStrike = g.NotesToStrike[:0]
@@ -400,6 +421,15 @@ func (g *Graph) TurnNotesOff() {
 	}
 }
 
+// TurnAllNotesOff ...
+func (g *Graph) TurnAllNotesOff() {
+	for i, note := range g.Notes {
+		writer.NoteOff(g.MidiWriter, note.index)
+		g.Notes[i].beatsPlayed = 0
+		g.Notes[i].isPlaying = false
+	}
+}
+
 // Play ...
 func (g *Graph) Play() {
 	g.IsPlaying = true
@@ -409,6 +439,7 @@ func (g *Graph) Play() {
 func (g *Graph) Stop() {
 	g.IsPlaying = false
 	g.BeatIndex = 0
+	g.TurnAllNotesOff()
 	g.SetPlayheadPosition()
 }
 

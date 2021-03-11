@@ -103,12 +103,13 @@ func (c *Controls) ResetDials() {
 
 	rowPos := []float64{
 		c.Rect.Min.Y + 130,
-		c.Rect.Min.Y + 230,
-		c.Rect.Min.Y + 330,
-		c.Rect.Min.Y + 430,
+		c.Rect.Min.Y + 220,
+		c.Rect.Min.Y + 310,
+		c.Rect.Min.Y + 400,
+		c.Rect.Min.Y + 490,
 	}
 
-	c.Dials = make([]*Dial, 8)
+	c.Dials = make([]*Dial, 9)
 	c.Dials[0] = NewDial("freq", "%.3f", pixel.R(columnPos[0], rowPos[0], columnPos[0]+dialWidth, rowPos[0]+dialHeight), 0.3, 0.01, 3.0, 0.001)
 	c.Dials[1] = NewDial("space", "%.2f", pixel.R(columnPos[1], rowPos[0], columnPos[1]+dialWidth, rowPos[0]+dialHeight), 0.9, 0.01, 3.0, 0.01)
 	c.Dials[2] = NewDial("gain", "%.1f", pixel.R(columnPos[0], rowPos[1], columnPos[0]+dialWidth, rowPos[1]+dialHeight), 2.0, 0.01, 3.0, 0.1)
@@ -117,6 +118,7 @@ func (c *Controls) ResetDials() {
 	c.Dials[5] = NewDial("y", "%.1f", pixel.R(columnPos[1], rowPos[2], columnPos[1]+dialWidth, rowPos[2]+dialHeight), 24, 4, 48, 1)
 	c.Dials[6] = NewDial("pos", "%.1f", pixel.R(columnPos[0], rowPos[3], columnPos[0]+dialWidth, rowPos[3]+dialHeight), 0, 0, 1000, 1)
 	c.Dials[7] = NewDial("bpm", "%.1f", pixel.R(columnPos[1], rowPos[3], columnPos[1]+dialWidth, rowPos[3]+dialHeight), 180, 1, 960, 1)
+	c.Dials[8] = NewDial("bl", "%.1f", pixel.R(columnPos[1], rowPos[4], columnPos[1]+dialWidth, rowPos[4]+dialHeight), 1, 0, 8, 1)
 }
 
 // Compose ...
