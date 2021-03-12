@@ -1,7 +1,10 @@
 package ui
 
 import (
+	"encoding/json"
 	"image/color"
+	"io/ioutil"
+	"log"
 	"math"
 	"math/rand"
 	"strconv"
@@ -33,8 +36,6 @@ type Point struct {
 type Graph struct {
 	Rect           pixel.Rect
 	W, H           float64
-	Matrix         [][]uint32
-	UserMatrix     [][]uint32
 	Imd            *imdraw.IMDraw
 	CtrlChannel    chan signals.CtrlSignal
 	BeatChannel    chan signals.BeatSignal
@@ -49,15 +50,22 @@ type Graph struct {
 	Typ            *Typography
 	IsPlaying      bool
 	SignalReceived bool
-	Frequency      float32
-	Lacunarity     float32
-	Gain           float32
-	Octaves        uint8
-	XSteps         uint32
-	YSteps         uint32
-	Offset         uint32
-	Bpm            uint32
-	BeatLength     uint32
+	SessionData    SessionData
+}
+
+// SessionData ...
+type SessionData struct {
+	Matrix     [][]uint32
+	UserMatrix [][]uint32
+	Frequency  float32
+	Lacunarity float32
+	Gain       float32
+	Octaves    uint8
+	XSteps     uint32
+	YSteps     uint32
+	Offset     uint32
+	Bpm        uint32
+	BeatLength uint32
 }
 
 // NewGraph ...
@@ -75,7 +83,7 @@ func NewGraph(r pixel.Rect, ao midi.Out) *Graph {
 	g.Notes = make([]Note, 128)
 	for i := range g.Notes {
 		g.Notes[i].index = uint8(i)
-		g.Notes[i].beatLength = uint8(g.BeatLength)
+		g.Notes[i].beatLength = uint8(g.SessionData.BeatLength)
 	}
 
 	// Initialize playhead
@@ -102,20 +110,20 @@ func NewGraph(r pixel.Rect, ao midi.Out) *Graph {
 
 // Reset ...
 func (g *Graph) Reset() {
-	g.Frequency = 0.3
-	g.Lacunarity = 0.9
-	g.Gain = 2.0
-	g.Octaves = 5
-	g.XSteps = 16
-	g.YSteps = 24
-	g.Offset = 0
-	g.Bpm = 180
-	g.BeatLength = 1
+	g.SessionData.Frequency = 0.3
+	g.SessionData.Lacunarity = 0.9
+	g.SessionData.Gain = 2.0
+	g.SessionData.Octaves = 5
+	g.SessionData.XSteps = 16
+	g.SessionData.YSteps = 24
+	g.SessionData.Offset = 0
+	g.SessionData.Bpm = 180
+	g.SessionData.BeatLength = 1
 
 	// Initialize UserMatrix
-	g.UserMatrix = make([][]uint32, 64)
-	for i := range g.UserMatrix {
-		g.UserMatrix[i] = make([]uint32, 48)
+	g.SessionData.UserMatrix = make([][]uint32, 64)
+	for i := range g.SessionData.UserMatrix {
+		g.SessionData.UserMatrix[i] = make([]uint32, 48)
 	}
 }
 
@@ -123,29 +131,29 @@ func (g *Graph) Reset() {
 func (g *Graph) Compose() {
 
 	// Reset Matrix
-	g.Matrix = make([][]uint32, int(g.XSteps))
-	for i := range g.Matrix {
-		g.Matrix[i] = make([]uint32, int(g.YSteps))
+	g.SessionData.Matrix = make([][]uint32, int(g.SessionData.XSteps))
+	for i := range g.SessionData.Matrix {
+		g.SessionData.Matrix[i] = make([]uint32, int(g.SessionData.YSteps))
 	}
 
 	xPos := uint32(0)
-	for xPos < g.XSteps {
-		val := simplexnoise.Fbm(float32(xPos+g.Offset), 0, g.Frequency, g.Lacunarity, g.Gain, int(g.Octaves))
-		yPos := uint32(math.Round(helpers.ReRange(float64(val), -1, 1, 0, float64(g.YSteps-1))))
-		g.Matrix[xPos][yPos] = 1
+	for xPos < g.SessionData.XSteps {
+		val := simplexnoise.Fbm(float32(xPos+g.SessionData.Offset), 0, g.SessionData.Frequency, g.SessionData.Lacunarity, g.SessionData.Gain, int(g.SessionData.Octaves))
+		yPos := uint32(math.Round(helpers.ReRange(float64(val), -1, 1, 0, float64(g.SessionData.YSteps-1))))
+		g.SessionData.Matrix[xPos][yPos] = 1
 		xPos++
 	}
 
 	// Set beatlength
 	for i := range g.Notes {
-		g.Notes[i].beatLength = uint8(g.BeatLength)
+		g.Notes[i].beatLength = uint8(g.SessionData.BeatLength)
 	}
 
 	// Draw active blocks
-	for x := range g.Matrix {
-		for y := range g.Matrix[x] {
-			if g.UserMatrix[x][y] != 0 {
-				g.Matrix[x][y] = g.UserMatrix[x][y]
+	for x := range g.SessionData.Matrix {
+		for y := range g.SessionData.Matrix[x] {
+			if g.SessionData.UserMatrix[x][y] != 0 {
+				g.SessionData.Matrix[x][y] = g.SessionData.UserMatrix[x][y]
 			}
 		}
 	}
@@ -162,21 +170,21 @@ func (g *Graph) Compose() {
 	)
 	g.Imd.Rectangle(0)
 
-	blockWidth := g.W / float64(g.XSteps)
-	blockHeight := g.H / float64(g.YSteps)
+	blockWidth := g.W / float64(g.SessionData.XSteps)
+	blockHeight := g.H / float64(g.SessionData.YSteps)
 
 	// Draw active blocks
-	for x := range g.Matrix {
-		for y := range g.Matrix[x] {
-			if g.Matrix[x][y] > 0 {
+	for x := range g.SessionData.Matrix {
+		for y := range g.SessionData.Matrix[x] {
+			if g.SessionData.Matrix[x][y] > 0 {
 
 				// System block
 				blockColor := color.RGBA{0x00, 0x00, 0x00, 0xff}
 
 				// User block
-				if g.Matrix[x][y] == 2 { // On
+				if g.SessionData.Matrix[x][y] == 2 { // On
 					blockColor = color.RGBA{0x36, 0xaf, 0xcf, 0xff}
-				} else if g.Matrix[x][y] == 3 { // Off
+				} else if g.SessionData.Matrix[x][y] == 3 { // Off
 					blockColor = color.RGBA{0x90, 0x90, 0x90, 0xff}
 				}
 
@@ -197,7 +205,7 @@ func (g *Graph) Compose() {
 	}
 
 	// Vertical Lines
-	for x := 0; x <= len(g.Matrix); x++ {
+	for x := 0; x <= len(g.SessionData.Matrix); x++ {
 		g.Imd.Color = color.RGBA{0xff, 0xff, 0xff, 0xff}
 		g.Imd.Push(
 			pixel.V(
@@ -213,7 +221,7 @@ func (g *Graph) Compose() {
 	}
 
 	// Horizontal Lines
-	for y := 0; y <= len(g.Matrix[0]); y++ {
+	for y := 0; y <= len(g.SessionData.Matrix[0]); y++ {
 		g.Imd.Color = color.RGBA{0xff, 0xff, 0xff, 0xff}
 		g.Imd.Push(
 			pixel.V(
@@ -229,7 +237,7 @@ func (g *Graph) Compose() {
 	}
 
 	// Text: Beats
-	for x := 0; x < len(g.Matrix); x++ {
+	for x := 0; x < len(g.SessionData.Matrix); x++ {
 		str := strconv.Itoa(x + 1)
 		strX := g.Rect.Min.X + (float64(x) * blockWidth) + (blockWidth / 2) - (g.Typ.Txt.BoundsOf(str).W() / 2)
 		strY := g.Rect.Min.Y - (g.Typ.Txt.BoundsOf(str).H() + 10)
@@ -237,7 +245,7 @@ func (g *Graph) Compose() {
 	}
 
 	// Text: Notes
-	for y := 0; y < len(g.Matrix[0]); y++ {
+	for y := 0; y < len(g.SessionData.Matrix[0]); y++ {
 		str := g.NoteNames[g.Scale[y]%12]
 		strX := g.Rect.Min.X - (g.Typ.Txt.BoundsOf(str).W() + 10)
 		strY := g.Rect.Min.Y + (float64(y) * blockHeight) + (blockHeight / 2) - (g.Typ.Txt.BoundsOf(str).H() / 3)
@@ -257,12 +265,12 @@ func (g *Graph) RespondToInput(win *pixelgl.Window) {
 	if win.JustPressed(pixelgl.MouseButtonLeft) {
 		pos := win.MousePosition()
 		if helpers.PosInBounds(pos, g.Rect) {
-			x := uint32((pos.X - g.Rect.Min.X) / (g.W / float64(g.XSteps)))
-			y := uint32((pos.Y - g.Rect.Min.Y) / (g.H / float64(g.YSteps)))
-			if g.UserMatrix[x][y] == 2 {
-				g.UserMatrix[x][y] = 0
+			x := uint32((pos.X - g.Rect.Min.X) / (g.W / float64(g.SessionData.XSteps)))
+			y := uint32((pos.Y - g.Rect.Min.Y) / (g.H / float64(g.SessionData.YSteps)))
+			if g.SessionData.UserMatrix[x][y] == 2 {
+				g.SessionData.UserMatrix[x][y] = 0
 			} else {
-				g.UserMatrix[x][y] = 2
+				g.SessionData.UserMatrix[x][y] = 2
 			}
 			g.Compose()
 		}
@@ -271,12 +279,12 @@ func (g *Graph) RespondToInput(win *pixelgl.Window) {
 	if win.JustPressed(pixelgl.MouseButtonRight) {
 		pos := win.MousePosition()
 		if helpers.PosInBounds(pos, g.Rect) {
-			x := uint32((pos.X - g.Rect.Min.X) / (g.W / float64(g.XSteps)))
-			y := uint32((pos.Y - g.Rect.Min.Y) / (g.H / float64(g.YSteps)))
-			if g.UserMatrix[x][y] == 3 {
-				g.UserMatrix[x][y] = 0
+			x := uint32((pos.X - g.Rect.Min.X) / (g.W / float64(g.SessionData.XSteps)))
+			y := uint32((pos.Y - g.Rect.Min.Y) / (g.H / float64(g.SessionData.YSteps)))
+			if g.SessionData.UserMatrix[x][y] == 3 {
+				g.SessionData.UserMatrix[x][y] = 0
 			} else {
-				g.UserMatrix[x][y] = 3
+				g.SessionData.UserMatrix[x][y] = 3
 			}
 			g.Compose()
 		}
@@ -313,22 +321,26 @@ func (g *Graph) ListenToCtrlChannel() {
 					g.Stop()
 				case "toggle":
 					g.Toggle()
+				case "save":
+					g.Save()
+				case "load":
+					g.Load()
 				case "freq":
-					g.Frequency = float32(ctrlSignal.Value)
+					g.SessionData.Frequency = float32(ctrlSignal.Value)
 				case "space":
-					g.Lacunarity = float32(ctrlSignal.Value)
+					g.SessionData.Lacunarity = float32(ctrlSignal.Value)
 				case "gain":
-					g.Gain = float32(ctrlSignal.Value)
+					g.SessionData.Gain = float32(ctrlSignal.Value)
 				case "octs":
-					g.Octaves = uint8(ctrlSignal.Value)
+					g.SessionData.Octaves = uint8(ctrlSignal.Value)
 				case "x":
-					g.XSteps = uint32(ctrlSignal.Value)
+					g.SessionData.XSteps = uint32(ctrlSignal.Value)
 				case "y":
-					g.YSteps = uint32(ctrlSignal.Value)
+					g.SessionData.YSteps = uint32(ctrlSignal.Value)
 				case "pos":
-					g.Offset = uint32(ctrlSignal.Value)
-				case "bl":
-					g.BeatLength = uint32(ctrlSignal.Value)
+					g.SessionData.Offset = uint32(ctrlSignal.Value)
+				case "rel":
+					g.SessionData.BeatLength = uint32(ctrlSignal.Value)
 				}
 				g.SignalReceived = true
 			}
@@ -343,7 +355,7 @@ func (g *Graph) ListenToBeatChannel() {
 			select {
 			case beatSignal := <-g.BeatChannel:
 				if g.IsPlaying {
-					for y, val := range g.Matrix[g.BeatIndex%uint8(len(g.Matrix))] {
+					for y, val := range g.SessionData.Matrix[g.BeatIndex%uint8(len(g.SessionData.Matrix))] {
 						if val == 1 || val == 2 {
 							g.NotesToStrike = append(g.NotesToStrike, uint8(g.Scale[y]+(12*2)))
 						}
@@ -351,7 +363,7 @@ func (g *Graph) ListenToBeatChannel() {
 					g.TurnNotesOff()
 					g.TurnNotesOn()
 					g.SetPlayheadPosition()
-					g.BeatIndex = (g.BeatIndex + beatSignal.Value) % uint8(len(g.Matrix))
+					g.BeatIndex = (g.BeatIndex + beatSignal.Value) % uint8(len(g.SessionData.Matrix))
 				}
 			}
 		}
@@ -386,7 +398,7 @@ func (g *Graph) SetScale(scaleIndex int) {
 // SetPlayheadPosition ...
 func (g *Graph) SetPlayheadPosition() {
 	g.Playhead.Imd.Clear()
-	g.Playhead.Rect.Min.X = g.Rect.Min.X + (float64(g.BeatIndex) * g.W / float64(g.XSteps))
+	g.Playhead.Rect.Min.X = g.Rect.Min.X + (float64(g.BeatIndex) * g.W / float64(g.SessionData.XSteps))
 	g.Playhead.Compose()
 }
 
@@ -449,5 +461,33 @@ func (g *Graph) Toggle() {
 		g.Stop()
 	} else {
 		g.Play()
+	}
+}
+
+// Save ...
+func (g *Graph) Save() {
+
+	jsonData, err := json.Marshal(g.SessionData)
+	if err != nil {
+		log.Println(err)
+	}
+
+	err = ioutil.WriteFile("test.json", jsonData, 0644)
+	if err != nil {
+		log.Println(err)
+	}
+}
+
+// Load ...
+func (g *Graph) Load() {
+
+	jsonData, err := ioutil.ReadFile("test.json")
+	if err != nil {
+		log.Println(err)
+	}
+
+	err = json.Unmarshal(jsonData, &g.SessionData)
+	if err != nil {
+		log.Println(err)
 	}
 }

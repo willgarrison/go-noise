@@ -67,6 +67,7 @@ func (c *Controls) ResetButtons() {
 		c.Rect.Min.Y + 700.01,
 		c.Rect.Min.Y + 740.01,
 		c.Rect.Min.Y + 800.01,
+		c.Rect.Min.Y + 880.01,
 	}
 
 	c.ModeButtons = []*Button{
@@ -81,6 +82,8 @@ func (c *Controls) ResetButtons() {
 		NewButton("reset", pixel.R(columnPos[0], c.Rect.Min.Y+20, c.Rect.Max.X-20, c.Rect.Min.Y+90)),
 		NewButton("play", pixel.R(columnPos[0], rowPos[5], columnPos[0]+buttonWidths[0], rowPos[5]+buttonHeights[1])),
 		NewButton("stop", pixel.R(columnPos[1], rowPos[5], columnPos[1]+buttonWidths[0], rowPos[5]+buttonHeights[1])),
+		NewButton("save", pixel.R(columnPos[0], rowPos[6], columnPos[0]+buttonWidths[0], rowPos[6]+buttonHeights[1])),
+		NewButton("load", pixel.R(columnPos[1], rowPos[6], columnPos[1]+buttonWidths[0], rowPos[6]+buttonHeights[1])),
 	}
 
 	for i := range c.ModeButtons {
@@ -118,13 +121,15 @@ func (c *Controls) ResetDials() {
 	c.Dials[5] = NewDial("y", "%.1f", pixel.R(columnPos[1], rowPos[2], columnPos[1]+dialWidth, rowPos[2]+dialHeight), 24, 4, 48, 1)
 	c.Dials[6] = NewDial("pos", "%.1f", pixel.R(columnPos[0], rowPos[3], columnPos[0]+dialWidth, rowPos[3]+dialHeight), 0, 0, 1000, 1)
 	c.Dials[7] = NewDial("bpm", "%.1f", pixel.R(columnPos[1], rowPos[3], columnPos[1]+dialWidth, rowPos[3]+dialHeight), 180, 1, 960, 1)
-	c.Dials[8] = NewDial("bl", "%.1f", pixel.R(columnPos[1], rowPos[4], columnPos[1]+dialWidth, rowPos[4]+dialHeight), 1, 0, 8, 1)
+	c.Dials[8] = NewDial("rel", "%.1f", pixel.R(columnPos[1], rowPos[4], columnPos[1]+dialWidth, rowPos[4]+dialHeight), 1, 0, 8, 1)
 }
 
 // Compose ...
 func (c *Controls) Compose() {
 
 	c.Imd.Color = color.RGBA{0x00, 0x00, 0x00, 0xff}
+
+	// Left
 	c.Imd.Push(
 		pixel.V(c.Rect.Min.X, c.Rect.Min.Y),
 		pixel.V(c.Rect.Min.X, c.Rect.Max.Y),

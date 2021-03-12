@@ -11,9 +11,9 @@ import (
 )
 
 var (
-	windowRect   pixel.Rect = pixel.R(0, 0, 1200, 900)
-	graphRect    pixel.Rect = pixel.R(40.01, 60.01, 980, 880)
-	controlsRect pixel.Rect = pixel.R(1000, 0, 1200, 900)
+	windowRect   pixel.Rect = pixel.R(0, 0, 1200, 960)
+	graphRect    pixel.Rect = pixel.R(40.01, 60.01, 980, 940)
+	controlsRect pixel.Rect = pixel.R(1000, 0, 1200, 960)
 )
 
 func main() {
@@ -40,7 +40,7 @@ func run() {
 	g.Compose()
 
 	// Initialize metronome
-	m := metronome.New(g.Bpm)
+	m := metronome.New(g.SessionData.Bpm)
 	m.AddBeatChannel(g.BeatChannel)
 
 	// Initialize controls
