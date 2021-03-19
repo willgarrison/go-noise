@@ -4,6 +4,7 @@ import (
 	"github.com/faiface/pixel"
 	"github.com/faiface/pixel/imdraw"
 	"github.com/faiface/pixel/pixelgl"
+	"github.com/willgarrison/go-noise/pkg/files"
 	"github.com/willgarrison/go-noise/pkg/metronome"
 	"github.com/willgarrison/go-noise/pkg/midi"
 	"github.com/willgarrison/go-noise/pkg/ui"
@@ -35,19 +36,32 @@ func run() {
 	// Initialize batch
 	imdBatch := imdraw.New(nil)
 
+	// Initialize session
+	s := files.NewSession()
+
 	// Initialize graph
-	g := ui.NewGraph(graphRect, audio.Output)
+	g := ui.NewGraph(graphRect, audio.Output, &s.SessionData)
 	g.Compose()
 
 	// Initialize metronome
-	m := metronome.New(g.SessionData.Bpm)
-	m.AddBeatChannel(g.BeatChannel)
+	m := metronome.New(&s.SessionData)
 
 	// Initialize controls
-	c := ui.NewControls(controlsRect)
-	c.AddCtrlChannel(g.CtrlChannel)
-	c.AddCtrlChannel(m.CtrlChannel)
+	c := ui.NewControls(controlsRect, &s.SessionData)
 	c.Compose()
+
+	// Connect session outputs
+	s.AddOutputChannel(c.InputSessionChannel)
+	s.AddOutputChannel(g.InputSessionChannel)
+	s.AddOutputChannel(m.InputSessionChannel)
+
+	// Connect metronome outputs
+	m.AddOutputChannel(g.InputBeatChannel)
+
+	// Connect control outputs
+	c.AddOutputChannel(s.InputCtrlChannel)
+	c.AddOutputChannel(g.InputCtrlChannel)
+	c.AddOutputChannel(m.InputCtrlChannel)
 
 	// Start metronome
 	m.Start()

@@ -1,38 +1,46 @@
 package metronome
 
 import (
+	"fmt"
 	"time"
 
+	"github.com/willgarrison/go-noise/pkg/files"
 	"github.com/willgarrison/go-noise/pkg/signals"
 )
 
 // Metronome ...
 type Metronome struct {
-	Period       time.Duration
-	Ticker       *time.Ticker
-	BeatSignal   signals.BeatSignal
-	BeatChannels []chan signals.BeatSignal
-	CtrlChannel  chan signals.CtrlSignal
+	Period              time.Duration
+	Ticker              *time.Ticker
+	OutputChannels      []chan signals.Signal
+	InputCtrlChannel    chan signals.Signal
+	InputSessionChannel chan signals.Signal
+	SessionData         *files.SessionData
 }
 
 // New creates a new instance of Metronome
-func New(bpm uint32) *Metronome {
+func New(sessionData *files.SessionData) *Metronome {
 
-	period := bpmToPeriod(bpm)
+	period := bpmToPeriod(sessionData.Bpm)
 
 	m := &Metronome{
-		Period: period,
-		Ticker: time.NewTicker(period),
+		Period:      period,
+		Ticker:      time.NewTicker(period),
+		SessionData: sessionData,
 	}
 
-	m.CtrlChannel = make(chan signals.CtrlSignal)
-	m.ListenToCtrlChannel()
+	m.InputCtrlChannel = make(chan signals.Signal)
+	m.ListenToInputCtrlChannel()
+
+	m.InputSessionChannel = make(chan signals.Signal)
+	m.ListenToInputSessionChannel()
 
 	return m
 }
 
 // SetBpm converts bpm to a time.Duration and updates the current period
 func (m *Metronome) SetBpm(bpm uint32) {
+	m.SessionData.Bpm = bpm
 	period := bpmToPeriod(bpm)
 	m.SetPeriod(period)
 }
@@ -43,42 +51,62 @@ func (m *Metronome) SetPeriod(period time.Duration) {
 	m.Ticker.Reset(period)
 }
 
-// AddBeatChannel ...
-func (m *Metronome) AddBeatChannel(beatChannel chan signals.BeatSignal) {
-	m.BeatChannels = append(m.BeatChannels, beatChannel)
-}
-
 // Start ...
 func (m *Metronome) Start() {
 	go func() {
 		for {
-			select {
-			case <-m.Ticker.C:
-				m.BeatSignal.Value = 1
-				// Send the beat to all BeatChannels
-				for index := range m.BeatChannels {
-					m.BeatChannels[index] <- m.BeatSignal
-				}
+			<-m.Ticker.C
+			signal := signals.Signal{
+				Value: 1,
+			}
+			m.SendToOutputChannels(signal)
+		}
+	}()
+}
+
+// ListenToInputCtrlChannel ...
+func (m *Metronome) ListenToInputCtrlChannel() {
+	go func() {
+		for {
+			ctrlSignal := <-m.InputCtrlChannel
+			switch ctrlSignal.Label {
+			case "reset":
+				m.SetBpm(180)
+			case "bpm":
+				m.SetBpm(uint32(ctrlSignal.Value))
+			default:
 			}
 		}
 	}()
 }
 
-// ListenToCtrlChannel ...
-func (m *Metronome) ListenToCtrlChannel() {
+// ListenToInputSessionChannel ...
+func (m *Metronome) ListenToInputSessionChannel() {
 	go func() {
 		for {
-			select {
-			case ctrlSignal := <-m.CtrlChannel:
-				switch ctrlSignal.Label {
-				case "reset":
-					m.SetBpm(180)
-				case "bpm":
-					m.SetBpm(uint32(ctrlSignal.Value))
-				}
+			signal := <-m.InputSessionChannel
+			switch signal.Label {
+			case "saved":
+				fmt.Println("metronome: session data saved")
+			case "loaded":
+				fmt.Println("metronome: update from session data")
+			default:
 			}
 		}
 	}()
+}
+
+// AddOutputChannel ...
+func (m *Metronome) AddOutputChannel(outputChannel chan signals.Signal) {
+	m.OutputChannels = append(m.OutputChannels, outputChannel)
+}
+
+// SendToOutputChannels ...
+func (m *Metronome) SendToOutputChannels(signal signals.Signal) {
+	// Send ctrl signal to all subscribers
+	for index := range m.OutputChannels {
+		m.OutputChannels[index] <- signal
+	}
 }
 
 func bpmToPeriod(bpm uint32) time.Duration {

@@ -7,24 +7,27 @@ import (
 	"github.com/faiface/pixel"
 	"github.com/faiface/pixel/imdraw"
 	"github.com/faiface/pixel/pixelgl"
+	"github.com/willgarrison/go-noise/pkg/files"
 	"github.com/willgarrison/go-noise/pkg/signals"
 )
 
 // Controls ...
 type Controls struct {
-	Rect         pixel.Rect
-	W, H         float64
-	Dials        []*Dial
-	Buttons      []*Button
-	ModeButtons  []*Button
-	Imd          *imdraw.IMDraw
-	ImdBatch     *imdraw.IMDraw
-	Typ          *Typography
-	CtrlChannels []chan signals.CtrlSignal
+	Rect                pixel.Rect
+	W, H                float64
+	Dials               []*Dial
+	Buttons             []*Button
+	ModeButtons         []*Button
+	Imd                 *imdraw.IMDraw
+	ImdBatch            *imdraw.IMDraw
+	Typ                 *Typography
+	InputSessionChannel chan signals.Signal
+	OutputChannels      []chan signals.Signal
+	SessionData         *files.SessionData
 }
 
 // NewControls ...
-func NewControls(r pixel.Rect) *Controls {
+func NewControls(r pixel.Rect, sessionData *files.SessionData) *Controls {
 
 	c := new(Controls)
 
@@ -32,11 +35,16 @@ func NewControls(r pixel.Rect) *Controls {
 	c.W = r.W()
 	c.H = r.H()
 
+	c.SessionData = sessionData
+
 	c.ResetButtons()
 	c.ResetDials()
 
 	c.Imd = imdraw.New(nil)
 	c.ImdBatch = imdraw.New(nil)
+
+	c.InputSessionChannel = make(chan signals.Signal)
+	c.ListenToInputSessionChannel()
 
 	c.Typ = NewTypography()
 
@@ -112,7 +120,7 @@ func (c *Controls) ResetDials() {
 		c.Rect.Min.Y + 490,
 	}
 
-	c.Dials = make([]*Dial, 9)
+	c.Dials = make([]*Dial, 10)
 	c.Dials[0] = NewDial("freq", "%.3f", pixel.R(columnPos[0], rowPos[0], columnPos[0]+dialWidth, rowPos[0]+dialHeight), 0.3, 0.01, 3.0, 0.001)
 	c.Dials[1] = NewDial("space", "%.2f", pixel.R(columnPos[1], rowPos[0], columnPos[1]+dialWidth, rowPos[0]+dialHeight), 0.9, 0.01, 3.0, 0.01)
 	c.Dials[2] = NewDial("gain", "%.1f", pixel.R(columnPos[0], rowPos[1], columnPos[0]+dialWidth, rowPos[1]+dialHeight), 2.0, 0.01, 3.0, 0.1)
@@ -121,7 +129,8 @@ func (c *Controls) ResetDials() {
 	c.Dials[5] = NewDial("y", "%.1f", pixel.R(columnPos[1], rowPos[2], columnPos[1]+dialWidth, rowPos[2]+dialHeight), 24, 4, 48, 1)
 	c.Dials[6] = NewDial("pos", "%.1f", pixel.R(columnPos[0], rowPos[3], columnPos[0]+dialWidth, rowPos[3]+dialHeight), 0, 0, 1000, 1)
 	c.Dials[7] = NewDial("bpm", "%.1f", pixel.R(columnPos[1], rowPos[3], columnPos[1]+dialWidth, rowPos[3]+dialHeight), 180, 1, 960, 1)
-	c.Dials[8] = NewDial("rel", "%.1f", pixel.R(columnPos[1], rowPos[4], columnPos[1]+dialWidth, rowPos[4]+dialHeight), 1, 0, 8, 1)
+	c.Dials[8] = NewDial("cntr", "%.1f", pixel.R(columnPos[0], rowPos[4], columnPos[0]+dialWidth, rowPos[4]+dialHeight), 60, 0, 127, 1)
+	c.Dials[9] = NewDial("rel", "%.1f", pixel.R(columnPos[1], rowPos[4], columnPos[1]+dialWidth, rowPos[4]+dialHeight), 1, 0, 8, 1)
 }
 
 // Compose ...
@@ -200,11 +209,11 @@ func (c *Controls) RespondToInput(win *pixelgl.Window) {
 	// Key commands:
 	// Play/Pause with Spacebar
 	if win.JustPressed(pixelgl.KeySpace) {
-		ctrlSignal := signals.CtrlSignal{
+		signal := signals.Signal{
 			Label: "toggle",
 			Value: 1.0,
 		}
-		c.Send(ctrlSignal)
+		c.SendToOutputChannels(signal)
 	}
 
 	if win.JustPressed(pixelgl.MouseButtonLeft) {
@@ -216,14 +225,14 @@ func (c *Controls) RespondToInput(win *pixelgl.Window) {
 
 			// Reset button
 			if c.Buttons[i].JustPressed(pos) {
-				ctrlSignal := signals.CtrlSignal{
+				signal := signals.Signal{
 					Label: c.Buttons[i].Label,
 					Value: 1.0,
 				}
 				if c.Buttons[i].Label == "reset" {
 					c.ResetDials()
 				}
-				c.Send(ctrlSignal)
+				c.SendToOutputChannels(signal)
 				c.Compose()
 			}
 		}
@@ -245,11 +254,11 @@ func (c *Controls) RespondToInput(win *pixelgl.Window) {
 			// Activate the pressed mode button
 			c.ModeButtons[modeButtonPressedIndex].SetActive(true)
 			// Send signal
-			ctrlSignal := signals.CtrlSignal{
+			signal := signals.Signal{
 				Label: c.ModeButtons[modeButtonPressedIndex].Label,
 				Value: 1.0,
 			}
-			c.Send(ctrlSignal)
+			c.SendToOutputChannels(signal)
 			c.Compose()
 		}
 
@@ -269,11 +278,11 @@ func (c *Controls) RespondToInput(win *pixelgl.Window) {
 			c.Dials[i].Pressed(pos)
 
 			if c.Dials[i].IsUnread {
-				ctrlSignal := signals.CtrlSignal{
+				signal := signals.Signal{
 					Label: c.Dials[i].Label,
 					Value: c.Dials[i].Value,
 				}
-				c.Send(ctrlSignal)
+				c.SendToOutputChannels(signal)
 				c.Dials[i].IsUnread = false
 				c.Compose()
 			}
@@ -281,15 +290,31 @@ func (c *Controls) RespondToInput(win *pixelgl.Window) {
 	}
 }
 
-// AddCtrlChannel ...
-func (c *Controls) AddCtrlChannel(ctrlChannel chan signals.CtrlSignal) {
-	c.CtrlChannels = append(c.CtrlChannels, ctrlChannel)
+// ListenToInputSessionChannel ...
+func (c *Controls) ListenToInputSessionChannel() {
+	go func() {
+		for {
+			signal := <-c.InputSessionChannel
+			switch signal.Label {
+			case "saved":
+				fmt.Println("controls: session data saved")
+			case "loaded":
+				fmt.Println("controls: update from session data")
+			default:
+			}
+		}
+	}()
 }
 
-// Send ...
-func (c *Controls) Send(ctrlSignal signals.CtrlSignal) {
+// AddOutputChannel ...
+func (c *Controls) AddOutputChannel(outputChannel chan signals.Signal) {
+	c.OutputChannels = append(c.OutputChannels, outputChannel)
+}
+
+// SendToOutputChannels ...
+func (c *Controls) SendToOutputChannels(signal signals.Signal) {
 	// Send ctrl signal to all subscribers
-	for index := range c.CtrlChannels {
-		c.CtrlChannels[index] <- ctrlSignal
+	for index := range c.OutputChannels {
+		c.OutputChannels[index] <- signal
 	}
 }
