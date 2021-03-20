@@ -132,3 +132,9 @@ func (d *Dial) Pressed(pos pixel.Vec) {
 		}
 	}
 }
+
+func (d *Dial) Set(v float64) {
+	d.Value = helpers.Constrain(v, d.min, d.max)
+	d.newValue = d.Value
+	d.Update()
+}

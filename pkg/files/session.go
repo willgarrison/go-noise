@@ -23,15 +23,16 @@ type Session struct {
 // SessionData ...
 type SessionData struct {
 	UserMatrix [][]uint32
-	Frequency  float32
-	Lacunarity float32
-	Gain       float32
+	Frequency  float64
+	Lacunarity float64
+	Gain       float64
 	Octaves    uint8
 	XSteps     uint32
 	YSteps     uint32
 	Offset     uint32
 	Bpm        uint32
-	BeatLength uint32
+	Center     uint8
+	Release    uint8
 }
 
 func NewSession() *Session {
@@ -55,7 +56,8 @@ func (s *Session) InitSessionData() {
 	s.SessionData.YSteps = 24
 	s.SessionData.Offset = 0
 	s.SessionData.Bpm = 180
-	s.SessionData.BeatLength = 1
+	s.SessionData.Center = 60
+	s.SessionData.Release = 1
 
 	// Initialize UserMatrix
 	s.SessionData.UserMatrix = make([][]uint32, 64)

@@ -21,7 +21,7 @@ import (
 // Note ...
 type Note struct {
 	index       uint8
-	beatLength  uint8
+	release     uint8
 	beatsPlayed uint8
 	isPlaying   bool
 }
@@ -66,7 +66,7 @@ func NewGraph(r pixel.Rect, ao midi.Out, sessionData *files.SessionData) *Graph 
 	g.Notes = make([]Note, 128)
 	for i := range g.Notes {
 		g.Notes[i].index = uint8(i)
-		g.Notes[i].beatLength = uint8(g.SessionData.BeatLength)
+		g.Notes[i].release = uint8(g.SessionData.Release)
 	}
 
 	// Initialize playhead
@@ -103,7 +103,7 @@ func (g *Graph) Compose() {
 
 	xPos := uint32(0)
 	for xPos < g.SessionData.XSteps {
-		val := simplexnoise.Fbm(float32(xPos+g.SessionData.Offset), 0, g.SessionData.Frequency, g.SessionData.Lacunarity, g.SessionData.Gain, int(g.SessionData.Octaves))
+		val := simplexnoise.Fbm(float32(xPos+g.SessionData.Offset), 0, float32(g.SessionData.Frequency), float32(g.SessionData.Lacunarity), float32(g.SessionData.Gain), int(g.SessionData.Octaves))
 		yPos := uint32(math.Round(helpers.ReRange(float64(val), -1, 1, 0, float64(g.SessionData.YSteps-1))))
 		g.Matrix[xPos][yPos] = 1
 		xPos++
@@ -111,7 +111,7 @@ func (g *Graph) Compose() {
 
 	// Set beatlength
 	for i := range g.Notes {
-		g.Notes[i].beatLength = uint8(g.SessionData.BeatLength)
+		g.Notes[i].release = g.SessionData.Release
 	}
 
 	// Draw active blocks
@@ -315,7 +315,7 @@ func (g *Graph) TurnNotesOff() {
 	for i, note := range g.Notes {
 		if note.isPlaying {
 			g.Notes[i].beatsPlayed++
-			if g.Notes[i].beatsPlayed >= note.beatLength {
+			if g.Notes[i].beatsPlayed >= note.release {
 				writer.NoteOff(g.MidiWriter, note.index)
 				g.Notes[i].beatsPlayed = 0
 				g.Notes[i].isPlaying = false
@@ -378,11 +378,11 @@ func (g *Graph) ListenToInputCtrlChannel() {
 			case "toggle":
 				g.Toggle()
 			case "freq":
-				g.SessionData.Frequency = float32(signal.Value)
+				g.SessionData.Frequency = signal.Value
 			case "space":
-				g.SessionData.Lacunarity = float32(signal.Value)
+				g.SessionData.Lacunarity = signal.Value
 			case "gain":
-				g.SessionData.Gain = float32(signal.Value)
+				g.SessionData.Gain = signal.Value
 			case "octs":
 				g.SessionData.Octaves = uint8(signal.Value)
 			case "x":
@@ -392,7 +392,7 @@ func (g *Graph) ListenToInputCtrlChannel() {
 			case "pos":
 				g.SessionData.Offset = uint32(signal.Value)
 			case "rel":
-				g.SessionData.BeatLength = uint32(signal.Value)
+				g.SessionData.Release = uint8(signal.Value)
 			default:
 			}
 			g.SignalReceived = true

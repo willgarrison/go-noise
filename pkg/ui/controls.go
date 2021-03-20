@@ -37,8 +37,8 @@ func NewControls(r pixel.Rect, sessionData *files.SessionData) *Controls {
 
 	c.SessionData = sessionData
 
-	c.ResetButtons()
-	c.ResetDials()
+	c.InitButtons()
+	c.InitDials()
 
 	c.Imd = imdraw.New(nil)
 	c.ImdBatch = imdraw.New(nil)
@@ -51,8 +51,8 @@ func NewControls(r pixel.Rect, sessionData *files.SessionData) *Controls {
 	return c
 }
 
-// ResetButtons ..
-func (c *Controls) ResetButtons() {
+// InitButtons ..
+func (c *Controls) InitButtons() {
 
 	buttonWidths := []float64{
 		75.0,
@@ -101,8 +101,8 @@ func (c *Controls) ResetButtons() {
 	c.ModeButtons[0].SetActive(true)
 }
 
-// ResetDials ..
-func (c *Controls) ResetDials() {
+// InitDials ..
+func (c *Controls) InitDials() {
 
 	dialWidth := 70.0
 	dialHeight := 70.0
@@ -121,16 +121,30 @@ func (c *Controls) ResetDials() {
 	}
 
 	c.Dials = make([]*Dial, 10)
-	c.Dials[0] = NewDial("freq", "%.3f", pixel.R(columnPos[0], rowPos[0], columnPos[0]+dialWidth, rowPos[0]+dialHeight), 0.3, 0.01, 3.0, 0.001)
-	c.Dials[1] = NewDial("space", "%.2f", pixel.R(columnPos[1], rowPos[0], columnPos[1]+dialWidth, rowPos[0]+dialHeight), 0.9, 0.01, 3.0, 0.01)
-	c.Dials[2] = NewDial("gain", "%.1f", pixel.R(columnPos[0], rowPos[1], columnPos[0]+dialWidth, rowPos[1]+dialHeight), 2.0, 0.01, 3.0, 0.1)
-	c.Dials[3] = NewDial("octs", "%.1f", pixel.R(columnPos[1], rowPos[1], columnPos[1]+dialWidth, rowPos[1]+dialHeight), 5, 1, 10, 1)
-	c.Dials[4] = NewDial("x", "%.1f", pixel.R(columnPos[0], rowPos[2], columnPos[0]+dialWidth, rowPos[2]+dialHeight), 16, 4, 64, 1)
-	c.Dials[5] = NewDial("y", "%.1f", pixel.R(columnPos[1], rowPos[2], columnPos[1]+dialWidth, rowPos[2]+dialHeight), 24, 4, 48, 1)
-	c.Dials[6] = NewDial("pos", "%.1f", pixel.R(columnPos[0], rowPos[3], columnPos[0]+dialWidth, rowPos[3]+dialHeight), 0, 0, 1000, 1)
-	c.Dials[7] = NewDial("bpm", "%.1f", pixel.R(columnPos[1], rowPos[3], columnPos[1]+dialWidth, rowPos[3]+dialHeight), 180, 1, 960, 1)
-	c.Dials[8] = NewDial("cntr", "%.1f", pixel.R(columnPos[0], rowPos[4], columnPos[0]+dialWidth, rowPos[4]+dialHeight), 60, 0, 127, 1)
-	c.Dials[9] = NewDial("rel", "%.1f", pixel.R(columnPos[1], rowPos[4], columnPos[1]+dialWidth, rowPos[4]+dialHeight), 1, 0, 8, 1)
+	c.Dials[0] = NewDial("freq", "%.3f", pixel.R(columnPos[0], rowPos[0], columnPos[0]+dialWidth, rowPos[0]+dialHeight), c.SessionData.Frequency, 0.01, 3.0, 0.001)
+	c.Dials[1] = NewDial("space", "%.2f", pixel.R(columnPos[1], rowPos[0], columnPos[1]+dialWidth, rowPos[0]+dialHeight), c.SessionData.Lacunarity, 0.01, 3.0, 0.01)
+	c.Dials[2] = NewDial("gain", "%.1f", pixel.R(columnPos[0], rowPos[1], columnPos[0]+dialWidth, rowPos[1]+dialHeight), c.SessionData.Gain, 0.01, 3.0, 0.1)
+	c.Dials[3] = NewDial("octs", "%.1f", pixel.R(columnPos[1], rowPos[1], columnPos[1]+dialWidth, rowPos[1]+dialHeight), float64(c.SessionData.Octaves), 1, 10, 1)
+	c.Dials[4] = NewDial("x", "%.1f", pixel.R(columnPos[0], rowPos[2], columnPos[0]+dialWidth, rowPos[2]+dialHeight), float64(c.SessionData.XSteps), 4, 64, 1)
+	c.Dials[5] = NewDial("y", "%.1f", pixel.R(columnPos[1], rowPos[2], columnPos[1]+dialWidth, rowPos[2]+dialHeight), float64(c.SessionData.YSteps), 4, 48, 1)
+	c.Dials[6] = NewDial("pos", "%.1f", pixel.R(columnPos[0], rowPos[3], columnPos[0]+dialWidth, rowPos[3]+dialHeight), float64(c.SessionData.Offset), 0, 1000, 1)
+	c.Dials[7] = NewDial("bpm", "%.1f", pixel.R(columnPos[1], rowPos[3], columnPos[1]+dialWidth, rowPos[3]+dialHeight), float64(c.SessionData.Bpm), 1, 960, 1)
+	c.Dials[8] = NewDial("cntr", "%.1f", pixel.R(columnPos[0], rowPos[4], columnPos[0]+dialWidth, rowPos[4]+dialHeight), float64(c.SessionData.Center), 0, 127, 1)
+	c.Dials[9] = NewDial("rel", "%.1f", pixel.R(columnPos[1], rowPos[4], columnPos[1]+dialWidth, rowPos[4]+dialHeight), float64(c.SessionData.Release), 0, 8, 1)
+}
+
+// ResetDials
+func (c *Controls) ResetDials() {
+	c.Dials[0].Set(c.SessionData.Frequency)
+	c.Dials[1].Set(c.SessionData.Lacunarity)
+	c.Dials[2].Set(c.SessionData.Gain)
+	c.Dials[3].Set(float64(c.SessionData.Octaves))
+	c.Dials[4].Set(float64(c.SessionData.XSteps))
+	c.Dials[5].Set(float64(c.SessionData.YSteps))
+	c.Dials[6].Set(float64(c.SessionData.Offset))
+	c.Dials[7].Set(float64(c.SessionData.Bpm))
+	c.Dials[8].Set(float64(c.SessionData.Center))
+	c.Dials[9].Set(float64(c.SessionData.Release))
 }
 
 // Compose ...
@@ -229,9 +243,6 @@ func (c *Controls) RespondToInput(win *pixelgl.Window) {
 					Label: c.Buttons[i].Label,
 					Value: 1.0,
 				}
-				if c.Buttons[i].Label == "reset" {
-					c.ResetDials()
-				}
 				c.SendToOutputChannels(signal)
 				c.Compose()
 			}
@@ -296,6 +307,9 @@ func (c *Controls) ListenToInputSessionChannel() {
 		for {
 			signal := <-c.InputSessionChannel
 			switch signal.Label {
+			case "reset":
+				fmt.Println("controls: session reset")
+				c.ResetDials()
 			case "saved":
 				fmt.Println("controls: session data saved")
 			case "loaded":
