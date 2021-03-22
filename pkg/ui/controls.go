@@ -60,7 +60,7 @@ func (c *Controls) InitButtons() {
 	}
 	buttonHeights := []float64{
 		30.0,
-		60.0,
+		40.0,
 	}
 
 	columnPos := []float64{
@@ -69,29 +69,31 @@ func (c *Controls) InitButtons() {
 	}
 
 	rowPos := []float64{
-		c.Rect.Min.Y + 580.01,
-		c.Rect.Min.Y + 620.01,
-		c.Rect.Min.Y + 660.01,
-		c.Rect.Min.Y + 700.01,
-		c.Rect.Min.Y + 740.01,
+		c.Rect.Min.Y + 600.01,
+		c.Rect.Min.Y + 640.01,
+		c.Rect.Min.Y + 680.01,
+		c.Rect.Min.Y + 720.01,
+		c.Rect.Min.Y + 760.01,
 		c.Rect.Min.Y + 800.01,
-		c.Rect.Min.Y + 880.01,
+		c.Rect.Min.Y + 850.01,
+		c.Rect.Min.Y + 900.01,
 	}
 
 	c.ModeButtons = []*Button{
-		NewButton("major", pixel.R(columnPos[0], rowPos[0], columnPos[0]+buttonWidths[1], rowPos[0]+buttonHeights[0])),
-		NewButton("natural", pixel.R(columnPos[0], rowPos[1], columnPos[0]+buttonWidths[1], rowPos[1]+buttonHeights[0])),
-		NewButton("harmonic", pixel.R(columnPos[0], rowPos[2], columnPos[0]+buttonWidths[1], rowPos[2]+buttonHeights[0])),
-		NewButton("melodic", pixel.R(columnPos[0], rowPos[3], columnPos[0]+buttonWidths[1], rowPos[3]+buttonHeights[0])),
-		NewButton("pentatonic", pixel.R(columnPos[0], rowPos[4], columnPos[0]+buttonWidths[1], rowPos[4]+buttonHeights[0])),
+		NewButton("12 tone", pixel.R(columnPos[0], rowPos[0], columnPos[0]+buttonWidths[1], rowPos[0]+buttonHeights[0])),
+		NewButton("major", pixel.R(columnPos[0], rowPos[1], columnPos[0]+buttonWidths[1], rowPos[1]+buttonHeights[0])),
+		NewButton("natural", pixel.R(columnPos[0], rowPos[2], columnPos[0]+buttonWidths[1], rowPos[2]+buttonHeights[0])),
+		NewButton("harmonic", pixel.R(columnPos[0], rowPos[3], columnPos[0]+buttonWidths[1], rowPos[3]+buttonHeights[0])),
+		NewButton("melodic", pixel.R(columnPos[0], rowPos[4], columnPos[0]+buttonWidths[1], rowPos[4]+buttonHeights[0])),
+		NewButton("pentatonic", pixel.R(columnPos[0], rowPos[5], columnPos[0]+buttonWidths[1], rowPos[5]+buttonHeights[0])),
 	}
 
 	c.Buttons = []*Button{
 		NewButton("reset", pixel.R(columnPos[0], c.Rect.Min.Y+20, c.Rect.Max.X-20, c.Rect.Min.Y+90)),
-		NewButton("play", pixel.R(columnPos[0], rowPos[5], columnPos[0]+buttonWidths[0], rowPos[5]+buttonHeights[1])),
-		NewButton("stop", pixel.R(columnPos[1], rowPos[5], columnPos[1]+buttonWidths[0], rowPos[5]+buttonHeights[1])),
-		NewButton("save", pixel.R(columnPos[0], rowPos[6], columnPos[0]+buttonWidths[0], rowPos[6]+buttonHeights[1])),
-		NewButton("load", pixel.R(columnPos[1], rowPos[6], columnPos[1]+buttonWidths[0], rowPos[6]+buttonHeights[1])),
+		NewButton("play", pixel.R(columnPos[0], rowPos[6], columnPos[0]+buttonWidths[0], rowPos[6]+buttonHeights[1])),
+		NewButton("stop", pixel.R(columnPos[1], rowPos[6], columnPos[1]+buttonWidths[0], rowPos[6]+buttonHeights[1])),
+		NewButton("save", pixel.R(columnPos[0], rowPos[7], columnPos[0]+buttonWidths[0], rowPos[7]+buttonHeights[1])),
+		NewButton("load", pixel.R(columnPos[1], rowPos[7], columnPos[1]+buttonWidths[0], rowPos[7]+buttonHeights[1])),
 	}
 
 	for i := range c.ModeButtons {

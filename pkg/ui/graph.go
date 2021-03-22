@@ -264,26 +264,34 @@ func (g *Graph) RespondToInput(win *pixelgl.Window) {
 // SetScale ...
 func (g *Graph) SetScale(scaleIndex int) {
 
-	g.NoteNames = []string{"C", "Db", "D", "Eb", "E", "F", "F#", "G", "Ab", "A", "Bb", "B"}
-
 	// C   Db  D   Eb  E   F   F#  G   Ab  A   Bb   B
 	// 0   1   2   3   4   5   6   7   8   9   10   11
 	scales := [][]uint8{
-		{0, 2, 4, 5, 7, 9, 11}, // Major
-		{0, 2, 3, 5, 7, 8, 10}, // Natural minor	C, D, Eb, F, G, Ab, Bb
-		{0, 2, 3, 5, 7, 8, 11}, // Harmonic minor	C, D, Eb, F, G, Ab, B
-		{0, 2, 3, 5, 7, 9, 11}, // Melodic minor	C, D, Eb, F, G, A, B
-		{0, 2, 4, 7, 9},        // Pentatonic 		C, D, E, G, A, C
+		{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11}, // 12 Tone
+		{0, 2, 4, 5, 7, 9, 11},                 // Major
+		{0, 2, 3, 5, 7, 8, 10},                 // Natural minor	C, D, Eb, F, G, Ab, Bb
+		{0, 2, 3, 5, 7, 8, 11},                 // Harmonic minor	C, D, Eb, F, G, Ab, B
+		{0, 2, 3, 5, 7, 9, 11},                 // Melodic minor	C, D, Eb, F, G, A, B
+		{0, 2, 4, 7, 9},                        // Pentatonic 		C, D, E, G, A, C
 	}
 
-	realScaleIndex := scaleIndex % len(scales)
+	scaleIndex = scaleIndex % len(scales)
+
+	var octave uint8
+	var midiNote uint8
+	octave = 0
+	midiNote = 0
 
 	g.Scale = []uint8{}
-	for i := 0; i < 12; i++ {
-		for n := range scales[realScaleIndex] {
-			g.Scale = append(g.Scale, scales[realScaleIndex][n]+uint8(12*i)+g.SessionData.Low)
+	for midiNote < 127 {
+		for n := range scales[scaleIndex] {
+			midiNote = (12 * octave) + scales[scaleIndex][n]
+			g.Scale = append(g.Scale, midiNote)
 		}
+		octave++
 	}
+
+	g.NoteNames = []string{"C", "Db", "D", "Eb", "E", "F", "F#", "G", "Ab", "A", "Bb", "B"}
 }
 
 // SetPlayheadPosition ...
@@ -361,16 +369,18 @@ func (g *Graph) ListenToInputCtrlChannel() {
 		for {
 			signal := <-g.InputCtrlChannel
 			switch signal.Label {
-			case "major":
+			case "12 tone":
 				g.SetScale(0)
-			case "natural":
+			case "major":
 				g.SetScale(1)
-			case "harmonic":
+			case "natural":
 				g.SetScale(2)
-			case "melodic":
+			case "harmonic":
 				g.SetScale(3)
-			case "pentatonic":
+			case "melodic":
 				g.SetScale(4)
+			case "pentatonic":
+				g.SetScale(5)
 			case "play":
 				g.Play()
 			case "stop":
@@ -410,7 +420,7 @@ func (g *Graph) ListenToInputBeatChannel() {
 			if g.IsPlaying {
 				for y, val := range g.Matrix[g.BeatIndex%uint8(len(g.Matrix))] {
 					if val == 1 || val == 2 {
-						note := helpers.ConstrainUInt8(g.Scale[y]+g.SessionData.Low, 0, 127)
+						note := helpers.ConstrainUInt8(g.SessionData.Low+g.Scale[y], 0, 127)
 						g.NotesToStrike = append(g.NotesToStrike, note)
 					}
 				}
