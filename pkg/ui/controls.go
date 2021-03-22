@@ -129,7 +129,7 @@ func (c *Controls) InitDials() {
 	c.Dials[5] = NewDial("y", "%.1f", pixel.R(columnPos[1], rowPos[2], columnPos[1]+dialWidth, rowPos[2]+dialHeight), float64(c.SessionData.YSteps), 4, 48, 1)
 	c.Dials[6] = NewDial("pos", "%.1f", pixel.R(columnPos[0], rowPos[3], columnPos[0]+dialWidth, rowPos[3]+dialHeight), float64(c.SessionData.Offset), 0, 1000, 1)
 	c.Dials[7] = NewDial("bpm", "%.1f", pixel.R(columnPos[1], rowPos[3], columnPos[1]+dialWidth, rowPos[3]+dialHeight), float64(c.SessionData.Bpm), 1, 960, 1)
-	c.Dials[8] = NewDial("cntr", "%.1f", pixel.R(columnPos[0], rowPos[4], columnPos[0]+dialWidth, rowPos[4]+dialHeight), float64(c.SessionData.Center), 0, 127, 1)
+	c.Dials[8] = NewDial("low", "%.1f", pixel.R(columnPos[0], rowPos[4], columnPos[0]+dialWidth, rowPos[4]+dialHeight), float64(c.SessionData.Low), 0, 127, 1)
 	c.Dials[9] = NewDial("rel", "%.1f", pixel.R(columnPos[1], rowPos[4], columnPos[1]+dialWidth, rowPos[4]+dialHeight), float64(c.SessionData.Release), 0, 8, 1)
 }
 
@@ -143,7 +143,7 @@ func (c *Controls) ResetDials() {
 	c.Dials[5].Set(float64(c.SessionData.YSteps))
 	c.Dials[6].Set(float64(c.SessionData.Offset))
 	c.Dials[7].Set(float64(c.SessionData.Bpm))
-	c.Dials[8].Set(float64(c.SessionData.Center))
+	c.Dials[8].Set(float64(c.SessionData.Low))
 	c.Dials[9].Set(float64(c.SessionData.Release))
 }
 
@@ -234,11 +234,8 @@ func (c *Controls) RespondToInput(win *pixelgl.Window) {
 
 		pos := win.MousePosition()
 
-		// Buttons
 		for i := range c.Buttons {
-
-			// Reset button
-			if c.Buttons[i].JustPressed(pos) {
+			if c.Buttons[i].PosInBounds(pos) {
 				signal := signals.Signal{
 					Label: c.Buttons[i].Label,
 					Value: 1.0,
@@ -248,11 +245,9 @@ func (c *Controls) RespondToInput(win *pixelgl.Window) {
 			}
 		}
 
-		// ModeButtons
-		// Check if a modeButton was pressed
 		modeButtonPressedIndex := -1
 		for i := range c.ModeButtons {
-			if c.ModeButtons[i].JustPressed(pos) {
+			if c.ModeButtons[i].PosInBounds(pos) {
 				modeButtonPressedIndex = i
 			}
 		}
@@ -273,7 +268,6 @@ func (c *Controls) RespondToInput(win *pixelgl.Window) {
 			c.Compose()
 		}
 
-		// Dails
 		for i := range c.Dials {
 			c.Dials[i].JustPressed(pos)
 		}
@@ -283,11 +277,20 @@ func (c *Controls) RespondToInput(win *pixelgl.Window) {
 
 		pos := win.MousePosition()
 
-		// Dails
+		for i := range c.Buttons {
+			if c.Buttons[i].PosInBounds(pos) {
+				c.Buttons[i].SetPressed(true)
+			}
+		}
+
+		for i := range c.ModeButtons {
+			if c.ModeButtons[i].PosInBounds(pos) {
+				c.ModeButtons[i].SetPressed(true)
+			}
+		}
+
 		for i := range c.Dials {
-
 			c.Dials[i].Pressed(pos)
-
 			if c.Dials[i].IsUnread {
 				signal := signals.Signal{
 					Label: c.Dials[i].Label,
@@ -297,6 +300,17 @@ func (c *Controls) RespondToInput(win *pixelgl.Window) {
 				c.Dials[i].IsUnread = false
 				c.Compose()
 			}
+		}
+	}
+
+	if win.JustReleased(pixelgl.MouseButtonLeft) {
+
+		for i := range c.Buttons {
+			c.Buttons[i].SetPressed(false)
+		}
+
+		for i := range c.ModeButtons {
+			c.ModeButtons[i].SetPressed(false)
 		}
 	}
 }
@@ -314,6 +328,7 @@ func (c *Controls) ListenToInputSessionChannel() {
 				fmt.Println("controls: session data saved")
 			case "loaded":
 				fmt.Println("controls: update from session data")
+				c.ResetDials()
 			default:
 			}
 		}

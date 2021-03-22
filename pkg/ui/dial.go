@@ -125,7 +125,7 @@ func (d *Dial) Pressed(pos pixel.Vec) {
 		d.initialMousePosition = pos
 
 		if d.newValue != d.Value {
-			d.Value = helpers.Constrain(d.newValue, d.min, d.max)
+			d.Value = helpers.ConstrainFloat64(d.newValue, d.min, d.max)
 			d.newValue = d.Value
 			d.IsUnread = true
 			d.Update()
@@ -134,7 +134,8 @@ func (d *Dial) Pressed(pos pixel.Vec) {
 }
 
 func (d *Dial) Set(v float64) {
-	d.Value = helpers.Constrain(v, d.min, d.max)
+	d.Value = helpers.ConstrainFloat64(v, d.min, d.max)
 	d.newValue = d.Value
+	d.IsUnread = true
 	d.Update()
 }

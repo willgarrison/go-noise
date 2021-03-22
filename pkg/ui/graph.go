@@ -211,7 +211,7 @@ func (g *Graph) Compose() {
 
 	// Text: Notes
 	for y := 0; y < len(g.Matrix[0]); y++ {
-		str := g.NoteNames[g.Scale[y]%12]
+		str := g.NoteNames[(g.Scale[y]+g.SessionData.Low)%12]
 		strX := g.Rect.Min.X - (g.Typ.Txt.BoundsOf(str).W() + 10)
 		strY := g.Rect.Min.Y + (float64(y) * blockHeight) + (blockHeight / 2) - (g.Typ.Txt.BoundsOf(str).H() / 3)
 		g.Typ.DrawTextToBatch(str, pixel.V(strX, strY), color.RGBA{0x00, 0x00, 0x00, 0xff}, g.Typ.TxtBatch, g.Typ.Txt)
@@ -281,7 +281,7 @@ func (g *Graph) SetScale(scaleIndex int) {
 	g.Scale = []uint8{}
 	for i := 0; i < 12; i++ {
 		for n := range scales[realScaleIndex] {
-			g.Scale = append(g.Scale, scales[realScaleIndex][n]+uint8(12*i))
+			g.Scale = append(g.Scale, scales[realScaleIndex][n]+uint8(12*i)+g.SessionData.Low)
 		}
 	}
 }
@@ -391,6 +391,8 @@ func (g *Graph) ListenToInputCtrlChannel() {
 				g.SessionData.YSteps = uint32(signal.Value)
 			case "pos":
 				g.SessionData.Offset = uint32(signal.Value)
+			case "low":
+				g.SessionData.Low = uint8(signal.Value)
 			case "rel":
 				g.SessionData.Release = uint8(signal.Value)
 			default:
@@ -408,7 +410,8 @@ func (g *Graph) ListenToInputBeatChannel() {
 			if g.IsPlaying {
 				for y, val := range g.Matrix[g.BeatIndex%uint8(len(g.Matrix))] {
 					if val == 1 || val == 2 {
-						g.NotesToStrike = append(g.NotesToStrike, uint8(g.Scale[y]+(12*2)))
+						note := helpers.ConstrainUInt8(g.Scale[y]+g.SessionData.Low, 0, 127)
+						g.NotesToStrike = append(g.NotesToStrike, note)
 					}
 				}
 				g.TurnNotesOff()

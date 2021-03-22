@@ -16,6 +16,7 @@ type Button struct {
 	Label   string
 	Grouped bool
 	Active  bool
+	Pressed bool
 }
 
 // NewButton creates and returns a pointer to a Button
@@ -43,21 +44,24 @@ func (b *Button) Compose() {
 	b.Imd.Push(b.Rect.Min, b.Rect.Max)
 	b.Imd.Rectangle(1)
 
+	if b.Pressed {
+		b.Imd.Color = color.RGBA{0xbb, 0xff, 0x00, 0xff}
+		b.Imd.Push(b.Rect.Min, b.Rect.Max)
+		b.Imd.Rectangle(0)
+	}
+
 	if b.Grouped {
-
 		b.Imd.Color = color.RGBA{0xee, 0xee, 0xee, 0xff}
-
 		if b.Active {
 			b.Imd.Color = color.RGBA{0x36, 0xaf, 0xcf, 0xff}
 		}
-
 		b.Imd.Push(pixel.V(b.Rect.Min.X+10, b.Rect.Min.Y+10), pixel.V(b.Rect.Min.X+20, b.Rect.Min.Y+20))
 		b.Imd.Rectangle(0)
 	}
 }
 
-// JustPressed ...
-func (b *Button) JustPressed(pos pixel.Vec) bool {
+// PosInBounds ...
+func (b *Button) PosInBounds(pos pixel.Vec) bool {
 	return helpers.PosInBounds(pos, b.Rect)
 }
 
@@ -70,5 +74,11 @@ func (b *Button) SetGrouped(state bool) {
 // SetActive ...
 func (b *Button) SetActive(state bool) {
 	b.Active = state
+	b.Compose()
+}
+
+// SetPressed ...
+func (b *Button) SetPressed(state bool) {
+	b.Pressed = state
 	b.Compose()
 }

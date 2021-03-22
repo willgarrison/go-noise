@@ -19,7 +19,19 @@ func ReRange(value, aMin, aMax, bMin, bMax float64) float64 {
 }
 
 // Constrain caps the range (low and high) of a given float64 (n)
-func Constrain(n, low, high float64) float64 {
+func ConstrainFloat64(n, low, high float64) float64 {
+	switch {
+	case n < low:
+		return low
+	case n > high:
+		return high
+	default:
+		return n
+	}
+}
+
+// Constrain caps the range (low and high) of a given float64 (n)
+func ConstrainUInt8(n, low, high uint8) uint8 {
 	switch {
 	case n < low:
 		return low

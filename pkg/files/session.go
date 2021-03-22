@@ -31,7 +31,7 @@ type SessionData struct {
 	YSteps     uint32
 	Offset     uint32
 	Bpm        uint32
-	Center     uint8
+	Low        uint8
 	Release    uint8
 }
 
@@ -56,7 +56,7 @@ func (s *Session) InitSessionData() {
 	s.SessionData.YSteps = 24
 	s.SessionData.Offset = 0
 	s.SessionData.Bpm = 180
-	s.SessionData.Center = 60
+	s.SessionData.Low = 24
 	s.SessionData.Release = 1
 
 	// Initialize UserMatrix
