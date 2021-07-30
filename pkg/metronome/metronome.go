@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/willgarrison/go-noise/pkg/files"
+	"github.com/willgarrison/go-noise/pkg/session"
 	"github.com/willgarrison/go-noise/pkg/signals"
 )
 
@@ -15,11 +15,11 @@ type Metronome struct {
 	OutputChannels      []chan signals.Signal
 	InputCtrlChannel    chan signals.Signal
 	InputSessionChannel chan signals.Signal
-	SessionData         *files.SessionData
+	SessionData         *session.SessionData
 }
 
 // New creates a new instance of Metronome
-func New(sessionData *files.SessionData) *Metronome {
+func New(sessionData *session.SessionData) *Metronome {
 
 	period := bpmToPeriod(sessionData.Bpm)
 

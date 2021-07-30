@@ -10,8 +10,8 @@ import (
 	"github.com/faiface/pixel"
 	"github.com/faiface/pixel/imdraw"
 	"github.com/faiface/pixel/pixelgl"
-	"github.com/willgarrison/go-noise/pkg/files"
 	"github.com/willgarrison/go-noise/pkg/helpers"
+	"github.com/willgarrison/go-noise/pkg/session"
 	"github.com/willgarrison/go-noise/pkg/signals"
 	"github.com/willgarrison/go-noise/pkg/simplexnoise"
 	"gitlab.com/gomidi/midi"
@@ -46,11 +46,11 @@ type Graph struct {
 	Typ                 *Typography
 	IsPlaying           bool
 	SignalReceived      bool
-	SessionData         *files.SessionData
+	SessionData         *session.SessionData
 }
 
 // NewGraph ...
-func NewGraph(r pixel.Rect, ao midi.Out, sessionData *files.SessionData) *Graph {
+func NewGraph(r pixel.Rect, ao midi.Out, sessionData *session.SessionData) *Graph {
 
 	g := new(Graph)
 

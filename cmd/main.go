@@ -4,9 +4,9 @@ import (
 	"github.com/faiface/pixel"
 	"github.com/faiface/pixel/imdraw"
 	"github.com/faiface/pixel/pixelgl"
-	"github.com/willgarrison/go-noise/pkg/files"
 	"github.com/willgarrison/go-noise/pkg/metronome"
 	"github.com/willgarrison/go-noise/pkg/midi"
+	"github.com/willgarrison/go-noise/pkg/session"
 	"github.com/willgarrison/go-noise/pkg/ui"
 	"golang.org/x/image/colornames"
 )
@@ -37,7 +37,7 @@ func run() {
 	imdBatch := imdraw.New(nil)
 
 	// Initialize session
-	s := files.NewSession()
+	s := session.NewSession()
 
 	// Initialize graph
 	g := ui.NewGraph(graphRect, audio.Output, &s.SessionData)

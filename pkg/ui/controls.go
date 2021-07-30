@@ -7,7 +7,7 @@ import (
 	"github.com/faiface/pixel"
 	"github.com/faiface/pixel/imdraw"
 	"github.com/faiface/pixel/pixelgl"
-	"github.com/willgarrison/go-noise/pkg/files"
+	"github.com/willgarrison/go-noise/pkg/session"
 	"github.com/willgarrison/go-noise/pkg/signals"
 )
 
@@ -23,11 +23,11 @@ type Controls struct {
 	Typ                 *Typography
 	InputSessionChannel chan signals.Signal
 	OutputChannels      []chan signals.Signal
-	SessionData         *files.SessionData
+	SessionData         *session.SessionData
 }
 
 // NewControls ...
-func NewControls(r pixel.Rect, sessionData *files.SessionData) *Controls {
+func NewControls(r pixel.Rect, sessionData *session.SessionData) *Controls {
 
 	c := new(Controls)
 
@@ -129,10 +129,10 @@ func (c *Controls) InitDials() {
 	c.Dials[3] = NewDial("octs", "%.0f", pixel.R(columnPos[1], rowPos[1], columnPos[1]+dialWidth, rowPos[1]+dialHeight), float64(c.SessionData.Octaves), 1, 10, 1)
 	c.Dials[4] = NewDial("x", "%.0f", pixel.R(columnPos[0], rowPos[2], columnPos[0]+dialWidth, rowPos[2]+dialHeight), float64(c.SessionData.XSteps), 4, 64, 1)
 	c.Dials[5] = NewDial("y", "%.0f", pixel.R(columnPos[1], rowPos[2], columnPos[1]+dialWidth, rowPos[2]+dialHeight), float64(c.SessionData.YSteps), 4, 48, 1)
-	c.Dials[6] = NewDial("pos", "%.1f", pixel.R(columnPos[0], rowPos[3], columnPos[0]+dialWidth, rowPos[3]+dialHeight), float64(c.SessionData.Offset), 0, 1000, 1)
-	c.Dials[7] = NewDial("bpm", "%.1f", pixel.R(columnPos[1], rowPos[3], columnPos[1]+dialWidth, rowPos[3]+dialHeight), float64(c.SessionData.Bpm), 1, 960, 1)
+	c.Dials[6] = NewDial("pos", "%.0f", pixel.R(columnPos[0], rowPos[3], columnPos[0]+dialWidth, rowPos[3]+dialHeight), float64(c.SessionData.Offset), 0, 1000, 1)
+	c.Dials[7] = NewDial("bpm", "%.0f", pixel.R(columnPos[1], rowPos[3], columnPos[1]+dialWidth, rowPos[3]+dialHeight), float64(c.SessionData.Bpm), 1, 960, 1)
 	c.Dials[8] = NewDial("low", "%.0f", pixel.R(columnPos[0], rowPos[4], columnPos[0]+dialWidth, rowPos[4]+dialHeight), float64(c.SessionData.Low), 0, 127, 1)
-	c.Dials[9] = NewDial("sus", "%.1f", pixel.R(columnPos[1], rowPos[4], columnPos[1]+dialWidth, rowPos[4]+dialHeight), float64(c.SessionData.Release), 0, 8, 1)
+	c.Dials[9] = NewDial("sus", "%.0f", pixel.R(columnPos[1], rowPos[4], columnPos[1]+dialWidth, rowPos[4]+dialHeight), float64(c.SessionData.Release), 0, 8, 1)
 }
 
 // ResetDials
