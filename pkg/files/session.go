@@ -116,7 +116,7 @@ func (s *Session) ListenToInputCtrlChannel() {
 				s.SendToOutputChannels(signal)
 			case "save":
 				fmt.Println("saving...")
-				err := s.Save("test.json")
+				err := s.Save("storage/test.json")
 				if err != nil {
 					log.Print(err)
 				} else {
@@ -128,7 +128,7 @@ func (s *Session) ListenToInputCtrlChannel() {
 				}
 			case "load":
 				fmt.Println("loading...")
-				err := s.Load("test.json")
+				err := s.Load("storage/test.json")
 				if err != nil {
 					log.Print(err)
 				} else {

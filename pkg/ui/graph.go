@@ -211,10 +211,11 @@ func (g *Graph) Compose() {
 
 	// Text: Notes
 	for y := 0; y < len(g.Matrix[0]); y++ {
-		str := g.NoteNames[(g.Scale[y]+g.SessionData.Low)%12]
-		strX := g.Rect.Min.X - (g.Typ.Txt.BoundsOf(str).W() + 10)
-		strY := g.Rect.Min.Y + (float64(y) * blockHeight) + (blockHeight / 2) - (g.Typ.Txt.BoundsOf(str).H() / 3)
-		g.Typ.DrawTextToBatch(str, pixel.V(strX, strY), color.RGBA{0x00, 0x00, 0x00, 0xff}, g.Typ.TxtBatch, g.Typ.Txt)
+		midiNote := strconv.Itoa(int(g.SessionData.Low) + y)
+		noteName := g.NoteNames[(g.Scale[y]+g.SessionData.Low)%12]
+		noteNameX := g.Rect.Min.X - (g.Typ.Txt.BoundsOf(midiNote+" "+noteName).W() + 20)
+		noteNameY := g.Rect.Min.Y + (float64(y) * blockHeight) + (blockHeight / 2) - (g.Typ.Txt.BoundsOf(noteName).H() / 3)
+		g.Typ.DrawTextToBatch(midiNote+" "+noteName, pixel.V(noteNameX, noteNameY), color.RGBA{0x00, 0x00, 0x00, 0xff}, g.Typ.TxtBatch, g.Typ.Txt)
 	}
 }
 
