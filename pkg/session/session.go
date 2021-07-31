@@ -9,6 +9,7 @@ import (
 	"os"
 	"sync"
 
+	"github.com/willgarrison/go-noise/pkg/generators"
 	"github.com/willgarrison/go-noise/pkg/signals"
 )
 
@@ -22,17 +23,20 @@ type Session struct {
 
 // SessionData ...
 type SessionData struct {
-	UserMatrix [][]uint32
-	Frequency  float64
-	Lacunarity float64
-	Gain       float64
-	Octaves    uint8
-	XSteps     uint32
-	YSteps     uint32
-	Offset     uint32
-	Bpm        uint32
-	Low        uint8
-	Release    uint8
+	UserMatrix  [][]uint32
+	UserPattern *generators.Pattern
+	Frequency   float64
+	Lacunarity  float64
+	Gain        float64
+	Octaves     uint8
+	XSteps      uint32
+	YSteps      uint32
+	Offset      uint32
+	Bpm         uint32
+	Low         uint8
+	Release     uint8
+	N, K, R     uint8 // Pattern Variables
+	G           float64
 }
 
 func NewSession() *Session {
@@ -48,6 +52,13 @@ func NewSession() *Session {
 }
 
 func (s *Session) InitSessionData() {
+
+	// Initialize UserMatrix
+	s.SessionData.UserMatrix = make([][]uint32, 64)
+	for i := range s.SessionData.UserMatrix {
+		s.SessionData.UserMatrix[i] = make([]uint32, 48)
+	}
+
 	s.SessionData.Frequency = 0.3
 	s.SessionData.Lacunarity = 0.9
 	s.SessionData.Gain = 2.0
@@ -56,14 +67,15 @@ func (s *Session) InitSessionData() {
 	s.SessionData.YSteps = 24
 	s.SessionData.Offset = 0
 	s.SessionData.Bpm = 180
-	s.SessionData.Low = 24
+	s.SessionData.Low = 36
 	s.SessionData.Release = 1
 
-	// Initialize UserMatrix
-	s.SessionData.UserMatrix = make([][]uint32, 64)
-	for i := range s.SessionData.UserMatrix {
-		s.SessionData.UserMatrix[i] = make([]uint32, 48)
-	}
+	s.SessionData.N = 16
+	s.SessionData.K = 16
+	s.SessionData.R = 0
+	s.SessionData.G = 0
+
+	s.SessionData.UserPattern, _ = generators.NewEuclid(s.SessionData.N, s.SessionData.K, s.SessionData.R, s.SessionData.G)
 }
 
 // Save saves a representation of v to the file at path.

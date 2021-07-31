@@ -56,16 +56,18 @@ func (c *Controls) InitButtons() {
 
 	buttonWidths := []float64{
 		75.0,
-		160.0,
+		120.0,
 	}
 	buttonHeights := []float64{
 		30.0,
 		40.0,
+		120.0,
 	}
 
 	columnPos := []float64{
 		c.Rect.Min.X + 20,
 		c.Rect.Min.X + 105,
+		c.Rect.Min.X + 150,
 	}
 
 	rowPos := []float64{
@@ -80,20 +82,20 @@ func (c *Controls) InitButtons() {
 	}
 
 	c.ModeButtons = []*Button{
-		NewButton("12 tone", pixel.R(columnPos[0], rowPos[0], columnPos[0]+buttonWidths[1], rowPos[0]+buttonHeights[0])),
+		NewButton("pentatonic", pixel.R(columnPos[0], rowPos[0], columnPos[0]+buttonWidths[1], rowPos[0]+buttonHeights[0])),
 		NewButton("major", pixel.R(columnPos[0], rowPos[1], columnPos[0]+buttonWidths[1], rowPos[1]+buttonHeights[0])),
 		NewButton("natural", pixel.R(columnPos[0], rowPos[2], columnPos[0]+buttonWidths[1], rowPos[2]+buttonHeights[0])),
-		NewButton("harmonic", pixel.R(columnPos[0], rowPos[3], columnPos[0]+buttonWidths[1], rowPos[3]+buttonHeights[0])),
-		NewButton("melodic", pixel.R(columnPos[0], rowPos[4], columnPos[0]+buttonWidths[1], rowPos[4]+buttonHeights[0])),
-		NewButton("pentatonic", pixel.R(columnPos[0], rowPos[5], columnPos[0]+buttonWidths[1], rowPos[5]+buttonHeights[0])),
+		NewButton("harmonic", pixel.R(columnPos[2], rowPos[0], columnPos[2]+buttonWidths[1], rowPos[0]+buttonHeights[0])),
+		NewButton("melodic", pixel.R(columnPos[2], rowPos[1], columnPos[2]+buttonWidths[1], rowPos[1]+buttonHeights[0])),
+		NewButton("12 tone", pixel.R(columnPos[2], rowPos[2], columnPos[2]+buttonWidths[1], rowPos[2]+buttonHeights[0])),
 	}
 
 	c.Buttons = []*Button{
 		NewButton("reset", pixel.R(columnPos[0], c.Rect.Min.Y+20, c.Rect.Max.X-20, c.Rect.Min.Y+90)),
-		NewButton("play", pixel.R(columnPos[0], rowPos[6], columnPos[0]+buttonWidths[0], rowPos[6]+buttonHeights[1])),
-		NewButton("stop", pixel.R(columnPos[1], rowPos[6], columnPos[1]+buttonWidths[0], rowPos[6]+buttonHeights[1])),
-		NewButton("save", pixel.R(columnPos[0], rowPos[7], columnPos[0]+buttonWidths[0], rowPos[7]+buttonHeights[1])),
-		NewButton("load", pixel.R(columnPos[1], rowPos[7], columnPos[1]+buttonWidths[0], rowPos[7]+buttonHeights[1])),
+		NewButton("play", pixel.R(columnPos[0], rowPos[4], columnPos[0]+buttonWidths[1], rowPos[4]+buttonHeights[2])),
+		NewButton("stop", pixel.R(columnPos[2], rowPos[4], columnPos[2]+buttonWidths[0], rowPos[4]+buttonHeights[1])),
+		NewButton("save", pixel.R(columnPos[0], rowPos[7], columnPos[0]+buttonWidths[1], rowPos[7]+buttonHeights[1])),
+		NewButton("load", pixel.R(columnPos[2], rowPos[7], columnPos[2]+buttonWidths[1], rowPos[7]+buttonHeights[1])),
 	}
 
 	for i := range c.ModeButtons {
@@ -112,6 +114,7 @@ func (c *Controls) InitDials() {
 	columnPos := []float64{
 		c.Rect.Min.X + 20,
 		c.Rect.Min.X + 110,
+		c.Rect.Min.X + 200,
 	}
 
 	rowPos := []float64{
@@ -122,7 +125,7 @@ func (c *Controls) InitDials() {
 		c.Rect.Min.Y + 490,
 	}
 
-	c.Dials = make([]*Dial, 10)
+	c.Dials = make([]*Dial, 14)
 	c.Dials[0] = NewDial("freq", "%.3f", pixel.R(columnPos[0], rowPos[0], columnPos[0]+dialWidth, rowPos[0]+dialHeight), c.SessionData.Frequency, 0.01, 3.0, 0.001)
 	c.Dials[1] = NewDial("space", "%.2f", pixel.R(columnPos[1], rowPos[0], columnPos[1]+dialWidth, rowPos[0]+dialHeight), c.SessionData.Lacunarity, 0.01, 3.0, 0.01)
 	c.Dials[2] = NewDial("gain", "%.1f", pixel.R(columnPos[0], rowPos[1], columnPos[0]+dialWidth, rowPos[1]+dialHeight), c.SessionData.Gain, 0.01, 3.0, 0.1)
@@ -133,6 +136,11 @@ func (c *Controls) InitDials() {
 	c.Dials[7] = NewDial("bpm", "%.0f", pixel.R(columnPos[1], rowPos[3], columnPos[1]+dialWidth, rowPos[3]+dialHeight), float64(c.SessionData.Bpm), 1, 960, 1)
 	c.Dials[8] = NewDial("low", "%.0f", pixel.R(columnPos[0], rowPos[4], columnPos[0]+dialWidth, rowPos[4]+dialHeight), float64(c.SessionData.Low), 0, 127, 1)
 	c.Dials[9] = NewDial("sus", "%.0f", pixel.R(columnPos[1], rowPos[4], columnPos[1]+dialWidth, rowPos[4]+dialHeight), float64(c.SessionData.Release), 0, 8, 1)
+	// Pattern Dials
+	c.Dials[10] = NewDial("n", "%.0f", pixel.R(columnPos[2], rowPos[0], columnPos[2]+dialWidth, rowPos[0]+dialHeight), float64(c.SessionData.N), 1, 32, 1)
+	c.Dials[11] = NewDial("k", "%.0f", pixel.R(columnPos[2], rowPos[1], columnPos[2]+dialWidth, rowPos[1]+dialHeight), float64(c.SessionData.K), 1, 32, 1)
+	c.Dials[12] = NewDial("r", "%.0f", pixel.R(columnPos[2], rowPos[2], columnPos[2]+dialWidth, rowPos[2]+dialHeight), float64(c.SessionData.R), 0, 32, 1)
+	c.Dials[13] = NewDial("g", "%.0f", pixel.R(columnPos[2], rowPos[3], columnPos[2]+dialWidth, rowPos[3]+dialHeight), float64(c.SessionData.G), 0, 32, 1)
 }
 
 // ResetDials
@@ -147,6 +155,11 @@ func (c *Controls) ResetDials() {
 	c.Dials[7].Set(float64(c.SessionData.Bpm))
 	c.Dials[8].Set(float64(c.SessionData.Low))
 	c.Dials[9].Set(float64(c.SessionData.Release))
+	// Pattern Dials
+	c.Dials[10].Set(float64(c.SessionData.N))
+	c.Dials[11].Set(float64(c.SessionData.K))
+	c.Dials[12].Set(float64(c.SessionData.R))
+	c.Dials[13].Set(float64(c.SessionData.G))
 }
 
 // Compose ...

@@ -10,6 +10,7 @@ import (
 	"github.com/faiface/pixel"
 	"github.com/faiface/pixel/imdraw"
 	"github.com/faiface/pixel/pixelgl"
+	"github.com/willgarrison/go-noise/pkg/generators"
 	"github.com/willgarrison/go-noise/pkg/helpers"
 	"github.com/willgarrison/go-noise/pkg/session"
 	"github.com/willgarrison/go-noise/pkg/signals"
@@ -123,6 +124,8 @@ func (g *Graph) Compose() {
 		}
 	}
 
+	g.SessionData.UserPattern, _ = generators.NewEuclid(g.SessionData.N, g.SessionData.K, g.SessionData.R, g.SessionData.G)
+
 	// Clear
 	g.Imd.Clear()
 	g.Typ.TxtBatch.Clear()
@@ -138,8 +141,28 @@ func (g *Graph) Compose() {
 	blockWidth := g.W / float64(g.SessionData.XSteps)
 	blockHeight := g.H / float64(g.SessionData.YSteps)
 
+	rhythmLength := len(g.SessionData.UserPattern.Rhythm)
+
+	activeColumnColor := color.RGBA{0xdd, 0xdd, 0xdd, 0xff}
+
 	// Draw active blocks
 	for x := range g.Matrix {
+
+		if g.SessionData.UserPattern.Rhythm[x%rhythmLength] == 1 {
+			g.Imd.Color = activeColumnColor
+			g.Imd.Push(
+				pixel.V(
+					g.Rect.Min.X+(float64(x)*blockWidth),
+					g.Rect.Min.Y,
+				),
+				pixel.V(
+					g.Rect.Min.X+(float64(x)*blockWidth)+blockWidth,
+					g.Rect.Max.Y,
+				),
+			)
+			g.Imd.Rectangle(0)
+		}
+
 		for y := range g.Matrix[x] {
 			if g.Matrix[x][y] > 0 {
 
@@ -406,6 +429,14 @@ func (g *Graph) ListenToInputCtrlChannel() {
 				g.SessionData.Low = uint8(signal.Value)
 			case "rel":
 				g.SessionData.Release = uint8(signal.Value)
+			case "n":
+				g.SessionData.N = uint8(signal.Value)
+			case "k":
+				g.SessionData.K = uint8(signal.Value)
+			case "r":
+				g.SessionData.R = uint8(signal.Value)
+			case "g":
+				g.SessionData.G = signal.Value
 			default:
 			}
 			g.SignalReceived = true
@@ -419,10 +450,12 @@ func (g *Graph) ListenToInputBeatChannel() {
 		for {
 			beatSignal := <-g.InputBeatChannel
 			if g.IsPlaying {
-				for y, val := range g.Matrix[g.BeatIndex%uint8(len(g.Matrix))] {
-					if val == 1 || val == 2 {
-						note := helpers.ConstrainUInt8(g.SessionData.Low+g.Scale[y], 0, 127)
-						g.NotesToStrike = append(g.NotesToStrike, note)
+				if g.SessionData.UserPattern.Rhythm[g.BeatIndex%uint8(len(g.SessionData.UserPattern.Rhythm))] == 1 {
+					for y, val := range g.Matrix[g.BeatIndex%uint8(len(g.Matrix))] {
+						if val == 1 || val == 2 {
+							note := helpers.ConstrainUInt8(g.SessionData.Low+g.Scale[y], 0, 127)
+							g.NotesToStrike = append(g.NotesToStrike, note)
+						}
 					}
 				}
 				g.TurnNotesOff()

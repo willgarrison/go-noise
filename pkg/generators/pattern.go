@@ -8,7 +8,7 @@ type Pattern struct {
 }
 
 // NewEuclid ...
-func NewEuclid(n, k, rotation int32, groove float64) (*Pattern, error) {
+func NewEuclid(n, k, rotation uint8, groove float64) (*Pattern, error) {
 
 	p := new(Pattern)
 
@@ -31,7 +31,7 @@ func NewEuclid(n, k, rotation int32, groove float64) (*Pattern, error) {
 }
 
 // createPattern creates a new rhythmic pattern using Bresenham’s line algorithm
-func (p *Pattern) createEuclidPattern(n, k int32) {
+func (p *Pattern) createEuclidPattern(n, k uint8) {
 
 	p.Rhythm = []uint8{}
 
@@ -39,7 +39,7 @@ func (p *Pattern) createEuclidPattern(n, k int32) {
 
 	ratio := float64(n) / float64(k)
 
-	var i int32
+	var i uint8
 	for i < k {
 		x := int(ratio * float64(i))
 		if x != previous {
@@ -74,12 +74,12 @@ func (p *Pattern) setRotate(rotation int) {
 	p.Rhythm = np
 }
 
-func (p *Pattern) setGroove(n, k int32, groove float64) {
+func (p *Pattern) setGroove(n, k uint8, groove float64) {
 
 	tmpRhythm := make([]uint8, len(p.Rhythm))
 	copy(tmpRhythm, p.Rhythm)
 
-	gn := (int32(helpers.ReRange(groove, 0, 100, 0, float64(k))) + n)
+	gn := (uint8(helpers.ReRange(groove, 0, 100, 0, float64(k))) + n)
 	if gn > k {
 		gn = k
 	}

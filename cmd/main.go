@@ -13,8 +13,8 @@ import (
 
 var (
 	windowRect   pixel.Rect = pixel.R(0, 0, 1200, 960)
-	graphRect    pixel.Rect = pixel.R(80.01, 60.01, 980, 940)
-	controlsRect pixel.Rect = pixel.R(1000, 0, 1200, 960)
+	graphRect    pixel.Rect = pixel.R(80.01, 60.01, 880, 940)
+	controlsRect pixel.Rect = pixel.R(900, 0, 1200, 960)
 )
 
 func main() {
