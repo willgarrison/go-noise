@@ -49,19 +49,19 @@ func NewSession() *Session {
 	s.InputCtrlChannel = make(chan signals.Signal)
 	s.ListenToInputCtrlChannel()
 
-	s.InitSessionData()
+	s.InitializeSessionData()
 
 	return s
 }
 
-func (s *Session) InitSessionData() {
+func (s *Session) InitializeSessionData() {
 
-	// Initialize UserMatrix
 	s.SessionData.UserMatrix = make([][]uint32, 64)
 	for i := range s.SessionData.UserMatrix {
 		s.SessionData.UserMatrix[i] = make([]uint32, 48)
 	}
 
+	// Set default parameters
 	s.SessionData.Frequency = 0.3
 	s.SessionData.Lacunarity = 0.9
 	s.SessionData.Gain = 2.0
@@ -72,7 +72,6 @@ func (s *Session) InitSessionData() {
 	s.SessionData.Bpm = 180
 	s.SessionData.Low = 36
 	s.SessionData.Release = 1
-
 	s.SessionData.N = 16
 	s.SessionData.K = 16
 	s.SessionData.R = 0
@@ -125,7 +124,7 @@ func (s *Session) ListenToInputCtrlChannel() {
 			switch signal.Label {
 			case "reset":
 
-				s.InitSessionData()
+				s.InitializeSessionData()
 
 				signal := signals.Signal{
 					Label: "reset",
