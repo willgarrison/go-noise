@@ -115,7 +115,7 @@ func (g *Graph) Compose() {
 		g.Notes[i].release = g.SessionData.Release
 	}
 
-	// Draw active blocks
+	// Set active blocks
 	for x := range g.Matrix {
 		for y := range g.Matrix[x] {
 			if g.SessionData.UserMatrix[x][y] != 0 {
@@ -130,8 +130,11 @@ func (g *Graph) Compose() {
 	g.Imd.Clear()
 	g.Typ.TxtBatch.Clear()
 
+	backgroundColumnColor := color.RGBA{0xdd, 0xdd, 0xdd, 0xff}
+	activeColumnColor := color.RGBA{0xee, 0xee, 0xee, 0xff}
+
 	// Background
-	g.Imd.Color = color.RGBA{0xee, 0xee, 0xee, 0xff}
+	g.Imd.Color = backgroundColumnColor
 	g.Imd.Push(
 		pixel.V(g.Rect.Min.X, g.Rect.Min.Y),
 		pixel.V(g.Rect.Max.X, g.Rect.Max.Y),
@@ -143,11 +146,10 @@ func (g *Graph) Compose() {
 
 	rhythmLength := len(g.SessionData.UserPattern.Rhythm)
 
-	activeColumnColor := color.RGBA{0xdd, 0xdd, 0xdd, 0xff}
-
-	// Draw active blocks
+	// Draw active columns and blocks
 	for x := range g.Matrix {
 
+		// Draw active columns
 		if g.SessionData.UserPattern.Rhythm[x%rhythmLength] == 1 {
 			g.Imd.Color = activeColumnColor
 			g.Imd.Push(
@@ -163,11 +165,12 @@ func (g *Graph) Compose() {
 			g.Imd.Rectangle(0)
 		}
 
+		// Draw active blocks
 		for y := range g.Matrix[x] {
 			if g.Matrix[x][y] > 0 {
 
 				// System block
-				blockColor := color.RGBA{0x00, 0x00, 0x00, 0xff}
+				blockColor := color.RGBA{0x10, 0x10, 0x10, 0xff}
 
 				// User block
 				if g.Matrix[x][y] == 2 { // On
