@@ -7,8 +7,11 @@ import (
 	"io"
 	"log"
 	"os"
+	"strconv"
 	"sync"
+	"time"
 
+	"github.com/gen2brain/dlgs"
 	"github.com/willgarrison/go-noise/pkg/generators"
 	"github.com/willgarrison/go-noise/pkg/signals"
 )
@@ -121,16 +124,31 @@ func (s *Session) ListenToInputCtrlChannel() {
 			signal := <-s.InputCtrlChannel
 			switch signal.Label {
 			case "reset":
+
 				s.InitSessionData()
+
 				signal := signals.Signal{
 					Label: "reset",
 				}
+
 				s.SendToOutputChannels(signal)
+
 			case "save":
-				fmt.Println("saving...")
-				err := s.Save("storage/test.json")
+
+				defaultFilename := "session-" + strconv.Itoa(int(time.Now().Unix()))
+				enteredFileName, _, err := dlgs.Entry("Save Session", "Save as:", defaultFilename)
 				if err != nil {
-					log.Print(err)
+					log.Println("dlgs.Entry:", err)
+				}
+
+				directory, _, err := dlgs.File("Select a save location:", "", true)
+				if err != nil {
+					log.Println("dlgs.File:", err)
+				}
+
+				err = s.Save(directory + "/" + enteredFileName + ".json")
+				if err != nil {
+					log.Println("s.Save:", err)
 				} else {
 					fmt.Println("saved")
 					signal := signals.Signal{
@@ -138,11 +156,17 @@ func (s *Session) ListenToInputCtrlChannel() {
 					}
 					s.SendToOutputChannels(signal)
 				}
+
 			case "load":
-				fmt.Println("loading...")
-				err := s.Load("storage/test.json")
+
+				selectedFile, _, err := dlgs.File("Select file:", "", false)
 				if err != nil {
-					log.Print(err)
+					log.Println("dlgs.File:", err)
+				}
+
+				err = s.Load(selectedFile)
+				if err != nil {
+					log.Println("s.Load:", err)
 				} else {
 					fmt.Println("loading complete")
 					signal := signals.Signal{
@@ -150,6 +174,7 @@ func (s *Session) ListenToInputCtrlChannel() {
 					}
 					s.SendToOutputChannels(signal)
 				}
+
 			default:
 			}
 		}
