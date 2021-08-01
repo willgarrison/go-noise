@@ -36,6 +36,6 @@ To `delete` a user-created cell, right-click to deactivate then right-click agai
  
 ---
 
-### Controls
+### Control board
 
 To be written...
