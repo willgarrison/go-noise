@@ -1,5 +1,9 @@
 # Go Noise
 
+## System Requirements 
+
+This is work-in-progress alpha software. The only current build is for macOS (I'm running macOS Big Sur). Eventually, I will create builds for multiple platforms, but for now please use this release at your own risk. Thank you!
+
 ## Setup
 
 By running the `noise` executable, a Virtual MIDI port will be created called on your system called `NoiseVirtualOut`.
