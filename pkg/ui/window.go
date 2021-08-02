@@ -9,7 +9,7 @@ import (
 func NewWindow(w, h float64) *pixelgl.Window {
 
 	config := pixelgl.WindowConfig{
-		Title:     "Pixel",
+		Title:     "Noise",
 		Bounds:    pixel.R(0, 0, w, h),
 		Resizable: false,
 		VSync:     true,
