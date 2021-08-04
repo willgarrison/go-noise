@@ -1,4 +1,6 @@
-# Go Noise
+# Noise
+
+![Noise](/.github/noise.png)
 
 ## System Requirements 
 
