@@ -13,7 +13,7 @@ import (
 
 var (
 	windowRect   pixel.Rect = pixel.R(0, 0, 1200, 960)
-	graphRect    pixel.Rect = pixel.R(80.01, 60.01, 880, 940)
+	gridRect     pixel.Rect = pixel.R(80.01, 60.01, 880, 940)
 	controlsRect pixel.Rect = pixel.R(900, 0, 1200, 960)
 )
 
@@ -31,7 +31,7 @@ func run() {
 	defer audio.Driver.Close()
 
 	// Initialize window
-	win := ui.NewWindow(windowRect.W(), windowRect.H())
+	win := ui.NewWindow("Noise", windowRect.W(), windowRect.H())
 
 	// Initialize batch
 	imdBatch := imdraw.New(nil)
@@ -39,8 +39,8 @@ func run() {
 	// Initialize session
 	s := session.NewSession()
 
-	// Initialize graph
-	g := ui.NewGraph(graphRect, audio.Output, &s.SessionData)
+	// Initialize grid
+	g := ui.NewGrid(gridRect, audio.Output, &s.SessionData)
 	g.Compose()
 
 	// Initialize metronome

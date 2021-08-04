@@ -18,7 +18,6 @@ func ReRange(value, aMin, aMax, bMin, bMax float64) float64 {
 	return newValue
 }
 
-// Constrain caps the range (low and high) of a given float64 (n)
 func ConstrainFloat64(n, low, high float64) float64 {
 	switch {
 	case n < low:
@@ -30,7 +29,6 @@ func ConstrainFloat64(n, low, high float64) float64 {
 	}
 }
 
-// Constrain caps the range (low and high) of a given float64 (n)
 func ConstrainUInt8(n, low, high uint8) uint8 {
 	switch {
 	case n < low:
@@ -42,7 +40,6 @@ func ConstrainUInt8(n, low, high uint8) uint8 {
 	}
 }
 
-// PosInBounds ...
 func PosInBounds(pos pixel.Vec, rect pixel.Rect) bool {
 	return rect.Contains(pos)
 }

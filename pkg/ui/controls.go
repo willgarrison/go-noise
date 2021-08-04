@@ -11,7 +11,6 @@ import (
 	"github.com/willgarrison/go-noise/pkg/signals"
 )
 
-// Controls ...
 type Controls struct {
 	Rect                pixel.Rect
 	W, H                float64
@@ -26,7 +25,6 @@ type Controls struct {
 	SessionData         *session.SessionData
 }
 
-// NewControls ...
 func NewControls(r pixel.Rect, sessionData *session.SessionData) *Controls {
 
 	c := new(Controls)
@@ -51,7 +49,6 @@ func NewControls(r pixel.Rect, sessionData *session.SessionData) *Controls {
 	return c
 }
 
-// InitButtons ..
 func (c *Controls) InitButtons() {
 
 	buttonWidths := []float64{
@@ -102,10 +99,9 @@ func (c *Controls) InitButtons() {
 		c.ModeButtons[i].SetGrouped(true)
 	}
 
-	c.ModeButtons[0].SetActive(true)
+	c.ModeButtons[0].SetEngaged(true)
 }
 
-// InitDials ..
 func (c *Controls) InitDials() {
 
 	dialWidth := 70.0
@@ -143,7 +139,6 @@ func (c *Controls) InitDials() {
 	c.Dials[13] = NewDial("g", "%.0f", pixel.R(columnPos[2], rowPos[3], columnPos[2]+dialWidth, rowPos[3]+dialHeight), float64(c.SessionData.G), 0, 32, 1)
 }
 
-// ResetDials
 func (c *Controls) ResetDials() {
 	c.Dials[0].Set(c.SessionData.Frequency)
 	c.Dials[1].Set(c.SessionData.Lacunarity)
@@ -162,7 +157,6 @@ func (c *Controls) ResetDials() {
 	c.Dials[13].Set(float64(c.SessionData.G))
 }
 
-// Compose ...
 func (c *Controls) Compose() {
 
 	c.Imd.Color = color.RGBA{0x00, 0x00, 0x00, 0xff}
@@ -180,8 +174,8 @@ func (c *Controls) Compose() {
 
 		// Labels
 		str := c.Buttons[i].Label
-		strX := c.Buttons[i].Rect.Min.X + (c.Buttons[i].W / 2) - (c.Typ.Txt.BoundsOf(str).W() / 2)
-		strY := c.Buttons[i].Rect.Min.Y + (c.Buttons[i].H / 2) - (c.Typ.Txt.BoundsOf(str).H() / 3)
+		strX := c.Buttons[i].Rect.Min.X + (c.Buttons[i].Rect.W() / 2) - (c.Typ.Txt.BoundsOf(str).W() / 2)
+		strY := c.Buttons[i].Rect.Min.Y + (c.Buttons[i].Rect.H() / 2) - (c.Typ.Txt.BoundsOf(str).H() / 3)
 		c.Typ.DrawTextToBatch(str, pixel.V(strX, strY), color.RGBA{0x00, 0x00, 0x00, 0xff}, c.Typ.TxtBatch, c.Typ.Txt)
 	}
 
@@ -189,8 +183,8 @@ func (c *Controls) Compose() {
 
 		// Labels
 		str := c.ModeButtons[i].Label
-		strX := c.ModeButtons[i].Rect.Min.X + (c.ModeButtons[i].W / 2) - (c.Typ.Txt.BoundsOf(str).W() / 2)
-		strY := c.ModeButtons[i].Rect.Min.Y + (c.ModeButtons[i].H / 2) - (c.Typ.Txt.BoundsOf(str).H() / 3)
+		strX := c.ModeButtons[i].Rect.Min.X + (c.ModeButtons[i].Rect.W() / 2) - (c.Typ.Txt.BoundsOf(str).W() / 2)
+		strY := c.ModeButtons[i].Rect.Min.Y + (c.ModeButtons[i].Rect.H() / 2) - (c.Typ.Txt.BoundsOf(str).H() / 3)
 		c.Typ.DrawTextToBatch(str, pixel.V(strX, strY), color.RGBA{0x00, 0x00, 0x00, 0xff}, c.Typ.TxtBatch, c.Typ.Txt)
 	}
 
@@ -210,7 +204,6 @@ func (c *Controls) Compose() {
 	}
 }
 
-// DrawTo ...
 func (c *Controls) DrawTo(imd *imdraw.IMDraw) {
 
 	// Draw static content
@@ -232,7 +225,6 @@ func (c *Controls) DrawTo(imd *imdraw.IMDraw) {
 	c.ImdBatch.Draw(imd)
 }
 
-// RespondToInput ...
 func (c *Controls) RespondToInput(win *pixelgl.Window) {
 
 	// Key commands:
@@ -270,10 +262,10 @@ func (c *Controls) RespondToInput(win *pixelgl.Window) {
 		if modeButtonPressedIndex > -1 {
 			// Deactivate all mode buttons
 			for i := range c.ModeButtons {
-				c.ModeButtons[i].SetActive(false)
+				c.ModeButtons[i].SetEngaged(false)
 			}
 			// Activate the pressed mode button
-			c.ModeButtons[modeButtonPressedIndex].SetActive(true)
+			c.ModeButtons[modeButtonPressedIndex].SetEngaged(true)
 			// Send signal
 			signal := signals.Signal{
 				Label: c.ModeButtons[modeButtonPressedIndex].Label,
@@ -330,7 +322,6 @@ func (c *Controls) RespondToInput(win *pixelgl.Window) {
 	}
 }
 
-// ListenToInputSessionChannel ...
 func (c *Controls) ListenToInputSessionChannel() {
 	go func() {
 		for {
@@ -350,12 +341,10 @@ func (c *Controls) ListenToInputSessionChannel() {
 	}()
 }
 
-// AddOutputChannel ...
 func (c *Controls) AddOutputChannel(outputChannel chan signals.Signal) {
 	c.OutputChannels = append(c.OutputChannels, outputChannel)
 }
 
-// SendToOutputChannels ...
 func (c *Controls) SendToOutputChannels(signal signals.Signal) {
 	// Send ctrl signal to all subscribers
 	for index := range c.OutputChannels {

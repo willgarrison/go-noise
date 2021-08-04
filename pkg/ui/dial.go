@@ -9,7 +9,6 @@ import (
 	"github.com/willgarrison/go-noise/pkg/helpers"
 )
 
-// Dial is an interactive UI element
 type Dial struct {
 	ImdStatic            *imdraw.IMDraw
 	Imd                  *imdraw.IMDraw
@@ -29,7 +28,6 @@ type Dial struct {
 	IsUnread             bool
 }
 
-// NewDial creates and returns a pointer to a Dial
 func NewDial(label string, valueFrmt string, r pixel.Rect, value, min, max, scale float64) *Dial {
 
 	d := &Dial{
@@ -53,7 +51,6 @@ func NewDial(label string, valueFrmt string, r pixel.Rect, value, min, max, scal
 	return d
 }
 
-// Compose ...
 func (d *Dial) Compose() {
 
 	d.ImdStatic.Clear()
@@ -71,7 +68,6 @@ func (d *Dial) Compose() {
 	d.Update()
 }
 
-// Update ...
 func (d *Dial) Update() {
 
 	xOffset := math.Sin(d.oneStepDistance * d.Value)
@@ -93,13 +89,11 @@ func (d *Dial) Update() {
 	d.Imd.Line(3)
 }
 
-// DrawTo ...
 func (d *Dial) DrawTo(imd *imdraw.IMDraw) {
 	d.ImdStatic.Draw(imd)
 	d.Imd.Draw(imd)
 }
 
-// JustPressed ...
 func (d *Dial) JustPressed(pos pixel.Vec) {
 
 	d.mouseInteraction = false
@@ -110,7 +104,6 @@ func (d *Dial) JustPressed(pos pixel.Vec) {
 	}
 }
 
-// Pressed ...
 func (d *Dial) Pressed(pos pixel.Vec) {
 
 	if d.mouseInteraction {

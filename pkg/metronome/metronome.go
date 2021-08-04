@@ -8,7 +8,6 @@ import (
 	"github.com/willgarrison/go-noise/pkg/signals"
 )
 
-// Metronome ...
 type Metronome struct {
 	Period              time.Duration
 	Ticker              *time.Ticker
@@ -18,7 +17,6 @@ type Metronome struct {
 	SessionData         *session.SessionData
 }
 
-// New creates a new instance of Metronome
 func New(sessionData *session.SessionData) *Metronome {
 
 	period := bpmToPeriod(sessionData.Bpm)
@@ -38,20 +36,17 @@ func New(sessionData *session.SessionData) *Metronome {
 	return m
 }
 
-// SetBpm converts bpm to a time.Duration and updates the current period
 func (m *Metronome) SetBpm(bpm uint32) {
 	m.SessionData.Bpm = bpm
 	period := bpmToPeriod(bpm)
 	m.SetPeriod(period)
 }
 
-// SetPeriod updates the current period
 func (m *Metronome) SetPeriod(period time.Duration) {
 	m.Period = period
 	m.Ticker.Reset(period)
 }
 
-// Start ...
 func (m *Metronome) Start() {
 	go func() {
 		for {
@@ -64,7 +59,6 @@ func (m *Metronome) Start() {
 	}()
 }
 
-// ListenToInputCtrlChannel ...
 func (m *Metronome) ListenToInputCtrlChannel() {
 	go func() {
 		for {
@@ -80,7 +74,6 @@ func (m *Metronome) ListenToInputCtrlChannel() {
 	}()
 }
 
-// ListenToInputSessionChannel ...
 func (m *Metronome) ListenToInputSessionChannel() {
 	go func() {
 		for {
@@ -96,12 +89,10 @@ func (m *Metronome) ListenToInputSessionChannel() {
 	}()
 }
 
-// AddOutputChannel ...
 func (m *Metronome) AddOutputChannel(outputChannel chan signals.Signal) {
 	m.OutputChannels = append(m.OutputChannels, outputChannel)
 }
 
-// SendToOutputChannels ...
 func (m *Metronome) SendToOutputChannels(signal signals.Signal) {
 	// Send ctrl signal to all subscribers
 	for index := range m.OutputChannels {

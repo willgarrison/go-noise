@@ -2,12 +2,10 @@ package generators
 
 import "github.com/willgarrison/go-noise/pkg/helpers"
 
-// Pattern ...
 type Pattern struct {
 	Rhythm []uint8
 }
 
-// NewEuclid ...
 func NewEuclid(n, k, rotation uint8, groove float64) (*Pattern, error) {
 
 	p := new(Pattern)

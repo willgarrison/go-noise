@@ -19,7 +19,6 @@ import (
 	"gitlab.com/gomidi/midi/writer"
 )
 
-// Note ...
 type Note struct {
 	index       uint8
 	release     uint8
@@ -27,8 +26,7 @@ type Note struct {
 	isPlaying   bool
 }
 
-// Graph ...
-type Graph struct {
+type Grid struct {
 	Rect                pixel.Rect
 	W, H                float64
 	Imd                 *imdraw.IMDraw
@@ -50,10 +48,9 @@ type Graph struct {
 	SessionData         *session.SessionData
 }
 
-// NewGraph ...
-func NewGraph(r pixel.Rect, ao midi.Out, sessionData *session.SessionData) *Graph {
+func NewGrid(r pixel.Rect, ao midi.Out, sessionData *session.SessionData) *Grid {
 
-	g := new(Graph)
+	g := new(Grid)
 
 	g.Rect = r
 	g.W = g.Rect.W()
@@ -93,8 +90,7 @@ func NewGraph(r pixel.Rect, ao midi.Out, sessionData *session.SessionData) *Grap
 	return g
 }
 
-// Compose ...
-func (g *Graph) Compose() {
+func (g *Grid) Compose() {
 
 	// Reset Matrix
 	g.Matrix = make([][]uint32, int(g.SessionData.XSteps))
@@ -245,14 +241,12 @@ func (g *Graph) Compose() {
 	}
 }
 
-// DrawTo ...
-func (g *Graph) DrawTo(imd *imdraw.IMDraw) {
+func (g *Grid) DrawTo(imd *imdraw.IMDraw) {
 	g.Imd.Draw(imd)
 	g.Playhead.DrawTo(imd)
 }
 
-// RespondToInput ...
-func (g *Graph) RespondToInput(win *pixelgl.Window) {
+func (g *Grid) RespondToInput(win *pixelgl.Window) {
 
 	if win.JustPressed(pixelgl.MouseButtonLeft) {
 		pos := win.MousePosition()
@@ -288,8 +282,7 @@ func (g *Graph) RespondToInput(win *pixelgl.Window) {
 	}
 }
 
-// SetScale ...
-func (g *Graph) SetScale(scaleIndex int) {
+func (g *Grid) SetScale(scaleIndex int) {
 
 	// C   Db  D   Eb  E   F   F#  G   Ab  A   Bb   B
 	// 0   1   2   3   4   5   6   7   8   9   10   11
@@ -321,15 +314,13 @@ func (g *Graph) SetScale(scaleIndex int) {
 	g.NoteNames = []string{"C", "Db", "D", "Eb", "E", "F", "F#", "G", "Ab", "A", "Bb", "B"}
 }
 
-// SetPlayheadPosition ...
-func (g *Graph) SetPlayheadPosition() {
+func (g *Grid) SetPlayheadPosition() {
 	g.Playhead.Imd.Clear()
 	g.Playhead.Rect.Min.X = g.Rect.Min.X + (float64(g.BeatIndex) * g.W / float64(g.SessionData.XSteps))
 	g.Playhead.Compose()
 }
 
-// TurnNotesOn ...
-func (g *Graph) TurnNotesOn() {
+func (g *Grid) TurnNotesOn() {
 	for _, note := range g.NotesToStrike {
 		// If already playing, turn off
 		if g.Notes[note].isPlaying {
@@ -345,8 +336,7 @@ func (g *Graph) TurnNotesOn() {
 	}
 }
 
-// TurnNotesOff ...
-func (g *Graph) TurnNotesOff() {
+func (g *Grid) TurnNotesOff() {
 	for i, note := range g.Notes {
 		if note.isPlaying {
 			g.Notes[i].beatsPlayed++
@@ -359,8 +349,7 @@ func (g *Graph) TurnNotesOff() {
 	}
 }
 
-// TurnAllNotesOff ...
-func (g *Graph) TurnAllNotesOff() {
+func (g *Grid) TurnAllNotesOff() {
 	for i, note := range g.Notes {
 		writer.NoteOff(g.MidiWriter, note.index)
 		g.Notes[i].beatsPlayed = 0
@@ -368,21 +357,18 @@ func (g *Graph) TurnAllNotesOff() {
 	}
 }
 
-// Play ...
-func (g *Graph) Play() {
+func (g *Grid) Play() {
 	g.IsPlaying = true
 }
 
-// Stop ...
-func (g *Graph) Stop() {
+func (g *Grid) Stop() {
 	g.IsPlaying = false
 	g.BeatIndex = 0
 	g.TurnAllNotesOff()
 	g.SetPlayheadPosition()
 }
 
-// Toggle ...
-func (g *Graph) Toggle() {
+func (g *Grid) Toggle() {
 	if g.IsPlaying {
 		g.Stop()
 	} else {
@@ -390,8 +376,7 @@ func (g *Graph) Toggle() {
 	}
 }
 
-// ListenToInputCtrlChannel ...
-func (g *Graph) ListenToInputCtrlChannel() {
+func (g *Grid) ListenToInputCtrlChannel() {
 	go func() {
 		for {
 			signal := <-g.InputCtrlChannel
@@ -447,8 +432,7 @@ func (g *Graph) ListenToInputCtrlChannel() {
 	}()
 }
 
-// ListenToInputBeatChannel ...
-func (g *Graph) ListenToInputBeatChannel() {
+func (g *Grid) ListenToInputBeatChannel() {
 	go func() {
 		for {
 			beatSignal := <-g.InputBeatChannel
@@ -470,18 +454,17 @@ func (g *Graph) ListenToInputBeatChannel() {
 	}()
 }
 
-// ListenToInputSessionChannel ...
-func (g *Graph) ListenToInputSessionChannel() {
+func (g *Grid) ListenToInputSessionChannel() {
 	go func() {
 		for {
 			signal := <-g.InputSessionChannel
 			switch signal.Label {
 			case "reset":
-				fmt.Println("graph: session data reset")
+				fmt.Println("grid: session data reset")
 			case "saved":
-				fmt.Println("graph: session data saved")
+				fmt.Println("grid: session data saved")
 			case "loaded":
-				fmt.Println("graph: update from session data")
+				fmt.Println("grid: update from session data")
 			default:
 			}
 			g.SignalReceived = true

@@ -24,7 +24,6 @@ type Session struct {
 	SessionData      SessionData
 }
 
-// SessionData ...
 type SessionData struct {
 	UserMatrix  [][]uint32
 	UserPattern *generators.Pattern
@@ -80,7 +79,6 @@ func (s *Session) InitializeSessionData() {
 	s.SessionData.UserPattern, _ = generators.NewEuclid(s.SessionData.N, s.SessionData.K, s.SessionData.R, s.SessionData.G)
 }
 
-// Save saves a representation of v to the file at path.
 func (s *Session) Save(path string) error {
 
 	lock.Lock()
@@ -101,7 +99,6 @@ func (s *Session) Save(path string) error {
 	return err
 }
 
-// Load ...
 func (s *Session) Load(path string) error {
 
 	lock.Lock()
@@ -116,7 +113,6 @@ func (s *Session) Load(path string) error {
 	return json.NewDecoder(f).Decode(&s.SessionData)
 }
 
-// ListenToInputCtrlChannel ...
 func (s *Session) ListenToInputCtrlChannel() {
 	go func() {
 		for {
@@ -180,12 +176,10 @@ func (s *Session) ListenToInputCtrlChannel() {
 	}()
 }
 
-// AddOutputChannel ...
 func (s *Session) AddOutputChannel(outputChannel chan signals.Signal) {
 	s.OutputChannels = append(s.OutputChannels, outputChannel)
 }
 
-// SendToOutputChannels ...
 func (s *Session) SendToOutputChannels(signal signals.Signal) {
 	// Send ctrl signal to all subscribers
 	for index := range s.OutputChannels {

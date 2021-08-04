@@ -5,13 +5,11 @@ import (
 	driver "gitlab.com/gomidi/rtmididrv"
 )
 
-// Midi ...
 type Midi struct {
 	Driver *driver.Driver
 	Output midi.Out
 }
 
-// New ...
 func New() (*Midi, error) {
 
 	m := &Midi{

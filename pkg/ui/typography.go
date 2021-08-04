@@ -9,13 +9,11 @@ import (
 	"golang.org/x/image/font/gofont/gomono"
 )
 
-// Typography ...
 type Typography struct {
 	TxtBatch *pixel.Batch
 	Txt      *text.Text
 }
 
-// NewTypography ...
 func NewTypography() *Typography {
 
 	typ := new(Typography)
@@ -34,7 +32,6 @@ func NewTypography() *Typography {
 	return typ
 }
 
-// DrawTextToBatch ...
 func (typ *Typography) DrawTextToBatch(s string, vec pixel.Vec, clr color.Color, txtBatch *pixel.Batch, txt *text.Text) {
 	txt.Clear()
 	txt.Color = clr
