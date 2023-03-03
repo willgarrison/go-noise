@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"math/rand"
 	"os"
 	"strconv"
 	"sync"
@@ -13,6 +14,7 @@ import (
 
 	"github.com/gen2brain/dlgs"
 	"github.com/willgarrison/go-noise/pkg/generators"
+	"github.com/willgarrison/go-noise/pkg/helpers"
 	"github.com/willgarrison/go-noise/pkg/signals"
 )
 
@@ -25,20 +27,21 @@ type Session struct {
 }
 
 type SessionData struct {
-	UserMatrix  [][]uint32
-	UserPattern *generators.Pattern
-	Frequency   float64
-	Lacunarity  float64
-	Gain        float64
-	Octaves     uint8
-	XSteps      uint32
-	YSteps      uint32
-	Offset      uint32
-	Bpm         uint32
-	Low         uint8
-	Release     uint8
-	N, K, R     uint8 // Pattern Variables
-	G           float64
+	UserMatrix       [][]uint32
+	UserPattern      *generators.Pattern
+	KeyboardNumInput string
+	Frequency        float64
+	Lacunarity       float64
+	Gain             float64
+	Octaves          uint8
+	XSteps           uint32
+	YSteps           uint32
+	Offset           uint32
+	Bpm              uint32
+	Low              uint8
+	Release          uint8
+	N, K, R          uint8 // Pattern Variables
+	G                float64
 }
 
 func NewSession() *Session {
@@ -60,14 +63,24 @@ func (s *Session) InitializeSessionData() {
 		s.SessionData.UserMatrix[i] = make([]uint32, 48)
 	}
 
-	// Set default parameters
+	// set a random seed
+	rand.Seed(time.Now().UnixNano())
+
+	// Set default parameters to random values
 	s.SessionData.Frequency = 0.3
 	s.SessionData.Lacunarity = 0.9
-	s.SessionData.Gain = 2.0
-	s.SessionData.Octaves = 5
-	s.SessionData.XSteps = 16
-	s.SessionData.YSteps = 24
-	s.SessionData.Offset = 0
+	s.SessionData.Gain = helpers.RandFloatInRange(1.5, 3.0)
+	s.SessionData.Octaves = uint8(helpers.RandIntInRange(3, 6))
+
+	// valid x steps
+	xSteps := []uint32{4, 8, 16, 24, 32}
+	s.SessionData.XSteps = xSteps[rand.Intn(len(xSteps))]
+
+	// valid y steps
+	ySteps := []uint32{8, 12, 24, 32}
+	s.SessionData.YSteps = ySteps[rand.Intn(len(ySteps))]
+
+	s.SessionData.Offset = uint32(helpers.RandIntInRange(1, 999))
 	s.SessionData.Bpm = 180
 	s.SessionData.Low = 36
 	s.SessionData.Release = 1

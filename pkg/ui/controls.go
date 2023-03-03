@@ -3,10 +3,13 @@ package ui
 import (
 	"fmt"
 	"image/color"
+	"log"
+	"strconv"
 
 	"github.com/faiface/pixel"
 	"github.com/faiface/pixel/imdraw"
 	"github.com/faiface/pixel/pixelgl"
+	"github.com/willgarrison/go-noise/pkg/helpers"
 	"github.com/willgarrison/go-noise/pkg/session"
 	"github.com/willgarrison/go-noise/pkg/signals"
 )
@@ -239,6 +242,8 @@ func (c *Controls) RespondToInput(win *pixelgl.Window) {
 
 	if win.JustPressed(pixelgl.MouseButtonLeft) {
 
+		c.SessionData.KeyboardNumInput = ""
+
 		pos := win.MousePosition()
 
 		for i := range c.Buttons {
@@ -284,6 +289,37 @@ func (c *Controls) RespondToInput(win *pixelgl.Window) {
 
 		pos := win.MousePosition()
 
+		if win.JustPressed(pixelgl.Key1) {
+			c.SessionData.KeyboardNumInput += "1"
+		}
+		if win.JustPressed(pixelgl.Key2) {
+			c.SessionData.KeyboardNumInput += "2"
+		}
+		if win.JustPressed(pixelgl.Key3) {
+			c.SessionData.KeyboardNumInput += "3"
+		}
+		if win.JustPressed(pixelgl.Key4) {
+			c.SessionData.KeyboardNumInput += "4"
+		}
+		if win.JustPressed(pixelgl.Key5) {
+			c.SessionData.KeyboardNumInput += "5"
+		}
+		if win.JustPressed(pixelgl.Key6) {
+			c.SessionData.KeyboardNumInput += "6"
+		}
+		if win.JustPressed(pixelgl.Key7) {
+			c.SessionData.KeyboardNumInput += "7"
+		}
+		if win.JustPressed(pixelgl.Key8) {
+			c.SessionData.KeyboardNumInput += "8"
+		}
+		if win.JustPressed(pixelgl.Key9) {
+			c.SessionData.KeyboardNumInput += "9"
+		}
+		if win.JustPressed(pixelgl.Key0) {
+			c.SessionData.KeyboardNumInput += "0"
+		}
+
 		for i := range c.Buttons {
 			if c.Buttons[i].PosInBounds(pos) {
 				c.Buttons[i].SetPressed(true)
@@ -311,6 +347,30 @@ func (c *Controls) RespondToInput(win *pixelgl.Window) {
 	}
 
 	if win.JustReleased(pixelgl.MouseButtonLeft) {
+
+		pos := win.MousePosition()
+
+		// if keyboard input is not empty and mouse is on a dial, set dial value to keyboard input
+		if c.SessionData.KeyboardNumInput != "" {
+			for i := range c.Dials {
+				if helpers.PosInBounds(pos, c.Dials[i].Rect) {
+					val, err := strconv.ParseFloat(c.SessionData.KeyboardNumInput, 64)
+					if err != nil {
+						log.Println("Error parsing keyboard input to float64")
+					}
+					c.Dials[i].Set(val)
+					signal := signals.Signal{
+						Label: c.Dials[i].Label,
+						Value: c.Dials[i].Value,
+					}
+					c.SendToOutputChannels(signal)
+					c.Compose()
+				}
+			}
+		}
+
+		// reset keyboard input
+		c.SessionData.KeyboardNumInput = ""
 
 		for i := range c.Buttons {
 			c.Buttons[i].SetPressed(false)

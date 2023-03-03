@@ -1,8 +1,22 @@
 package helpers
 
 import (
+	"math/rand"
+
 	"github.com/faiface/pixel"
 )
+
+// RandFloatInRange returns a random float64 between min and max
+func RandFloatInRange(min, max float64) float64 {
+	result := min + rand.Float64()*(max-min)
+	return result
+}
+
+// RandIntInRange returns a random int between min and max
+func RandIntInRange(min, max int) int {
+	result := min + rand.Intn(max-min)
+	return result
+}
 
 // ReRange maps a value from one range to another
 func ReRange(value, aMin, aMax, bMin, bMax float64) float64 {
