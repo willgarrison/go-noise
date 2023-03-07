@@ -9,5 +9,5 @@ require (
 	github.com/gopherjs/gopherjs v0.0.0-20210722203344-69c5ea87048d // indirect
 	gitlab.com/gomidi/midi v1.18.1
 	gitlab.com/gomidi/rtmididrv v0.10.1
-	golang.org/x/image v0.0.0-20200801110659-972c09e46d76
+	golang.org/x/image v0.5.0
 )
